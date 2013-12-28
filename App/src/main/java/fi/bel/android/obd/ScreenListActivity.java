@@ -1,8 +1,8 @@
 package fi.bel.android.obd;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 
 
 /**
@@ -21,7 +21,7 @@ import android.support.v4.app.FragmentActivity;
  * {@link ScreenListFragment.Callbacks} interface
  * to listen for item selections.
  */
-public class ScreenListActivity extends FragmentActivity
+public class ScreenListActivity extends Activity
         implements ScreenListFragment.Callbacks {
 
     /**
@@ -44,7 +44,7 @@ public class ScreenListActivity extends FragmentActivity
 
             // In two-pane mode, list items should be given the
             // 'activated' state when touched.
-            ((ScreenListFragment) getSupportFragmentManager()
+            ((ScreenListFragment) getFragmentManager()
                     .findFragmentById(R.id.screen_list))
                     .setActivateOnItemClick(true);
         }
@@ -66,7 +66,7 @@ public class ScreenListActivity extends FragmentActivity
             arguments.putString(ScreenDetailFragment.ARG_ITEM_ID, id);
             ScreenDetailFragment fragment = new ScreenDetailFragment();
             fragment.setArguments(arguments);
-            getSupportFragmentManager().beginTransaction()
+            getFragmentManager().beginTransaction()
                     .replace(R.id.screen_detail_container, fragment)
                     .commit();
 
