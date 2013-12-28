@@ -1,0 +1,23 @@
+- Connect:
+
+  1. Only working with: ELM-327 v1.5
+  2. Bluetooth pairing (via Settings)
+  3. List BD devices, ask user to associate with one.
+
+
+- Initialization:
+
+  ATZ (reset)
+  ATE1 (echo on)
+  ATL1 (line feed crlf)
+
+
+- Features:
+
+  * display fault codes
+  * clear fault codes
+  * display engine self-test status
+  * graph/display all on-board diagnostic data,
+  * save all sensor readings to sqlite DB (resolution: 1 reading per 10 sec?)
+  * persistent operation, automatic BT association
+
