@@ -4,8 +4,8 @@
     <string name="connection_fragment">Connection</string>
 
     <string name="connection_no_bluetooth">Please enable Bluetooth first!</string>
-    <string name="connection_device_list">Select a device</string>
-    <string name="connection_bond">Open settings...</string>
+    <string name="connection_device_list">Select BT device</string>
+    <string name="connection_bond">BT settings...</string>
     <string name="connection_disconnect">Disconnect</string>
 
     <string name="fault_selfcheck">Engine self-check status</string>

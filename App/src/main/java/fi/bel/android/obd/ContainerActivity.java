@@ -24,6 +24,8 @@ public class ContainerActivity extends Activity implements ScreenListFragment.Ca
 
     private boolean mTwoPane;
 
+    private Fragment activeFragment;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,16 +41,28 @@ public class ContainerActivity extends Activity implements ScreenListFragment.Ca
                     .findFragmentById(R.id.screen_list))
                     .setActivateOnItemClick(true);
         }
+
+        if (savedInstanceState != null && savedInstanceState.containsKey("activeFragment")) {
+            onItemSelected(savedInstanceState.getInt("activeFragment"));
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (activeFragment != null) {
+            outState.putInt("activeFragment", FRAGMENTS.indexOf(activeFragment));
+        }
     }
 
     @Override
     public void onItemSelected(int id) {
         FragmentTransaction ft = getFragmentManager().beginTransaction();
-        Fragment fragment = FRAGMENTS.get(id);
+        activeFragment = FRAGMENTS.get(id);
         if (mTwoPane) {
-            ft.replace(R.id.screen_detail_container, fragment);
+            ft.replace(R.id.screen_detail_container, activeFragment);
         } else {
-            ft.replace(R.id.screen_list, fragment);
+            ft.replace(R.id.screen_list, activeFragment);
             ft.addToBackStack(null);
         }
         ft.commit();

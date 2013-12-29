@@ -197,10 +197,21 @@ public class BluetoothRunnable implements Runnable {
         }
     }
 
+    /**
+     * Add a transaction on the transaction queue
+     *
+     * @param transaction
+     */
     public void addTransaction(Transaction transaction) {
         queue.add(transaction);
     }
 
+    /**
+     * Returns true if particular PID is supported on the device
+     *
+     * @param pid
+     * @return true if supported
+     */
     public boolean pidSupported(String pid) {
         return supportedPid.contains(pid);
     }
@@ -208,22 +219,22 @@ public class BluetoothRunnable implements Runnable {
     /**
      * Discover all known PID values
      *
-     *
+     * @param i pid to scan onwards from
      */
     private void checkPid(final int i) {
         queue.add(new Transaction(String.format("%02x %02x %d", 1, i, 1)) {
             @Override
             protected void success(String response) {
-                int data = Integer.valueOf(response.substring(4), 16);
+                int data = (int) Long.parseLong(response.substring(4), 16);
                 for (int j = 0; j < 32; j ++) {
                     if ((data & (1 << (31 - j))) != 0) {
-                        String s = String.format("%02x", i + j);
+                        String s = String.format("%02x", 1 + i + j);
                         supportedPid.add(s);
                         Log.i(TAG, "PID: " + s);
                     }
                 }
 
-                if (i < 256 - 32 && supportedPid.contains(String.format("%02x", i + 32))) {
+                if (i != 0xe0 && supportedPid.contains(String.format("%02x", i + 32))) {
                     checkPid(i + 32);
                 }
             }

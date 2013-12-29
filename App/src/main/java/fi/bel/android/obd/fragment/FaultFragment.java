@@ -112,14 +112,13 @@ public class FaultFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_fault, null);
-        selfcheckListAdapter = new ArrayAdapter(getActivity(), 0, 0, selfcheck) {
+        selfcheckListAdapter = new ArrayAdapter<SelfcheckTypes>(getActivity(), 0, 0, selfcheck) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 if (convertView == null) {
                     convertView = getActivity().getLayoutInflater().inflate(R.layout.fragment_fault_item, null);
                 }
-
-                SelfcheckTypes selfcheckType = SelfcheckTypes.values()[position];
+                SelfcheckTypes selfcheckType = selfcheck.get(position);
 
                 TextView name = (TextView) convertView.findViewById(R.id.fault_item_name);
                 name.setText(selfcheckType.toString());
@@ -265,7 +264,7 @@ public class FaultFragment extends Fragment {
             connectionFragment.sendCommand(new BluetoothRunnable.Transaction("01 01 1") {
                 @Override
                 protected void success(String response) {
-                    selfcheckStatus = Integer.valueOf(response.substring(4), 16);
+                    selfcheckStatus = (int) Long.parseLong(response.substring(4), 16);
 
                     selfcheck.add(SelfcheckTypes.MIL);
                     selfcheck.add(SelfcheckTypes.FAULT_CODES);
