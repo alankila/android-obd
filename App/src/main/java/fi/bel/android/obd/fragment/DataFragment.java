@@ -56,11 +56,11 @@ public class DataFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_data, null);
-        data = new ArrayAdapter<String>(getActivity(), 0, 0, data) {
+        dataListAdapter = new ArrayAdapter<String>(getActivity(), 0, 0, data) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 if (convertView == null) {
-                    convertView = getActivity().getLayoutInflater(R.layout.fragment_data_item, null);
+                    convertView = getActivity().getLayoutInflater().inflate(R.layout.fragment_data_item, null);
                 }
                 String pidKey = data.get(position);
                 float pidValue = dataMap.get(position);
@@ -74,7 +74,7 @@ public class DataFragment extends Fragment {
                 return convertView;
             }
         };
-        dataList = view.findViewById(R.id.data);
+        dataList = (ListView) view.findViewById(R.id.data);
         dataList.setAdapter(dataListAdapter);
         return view;
     }
