@@ -4,6 +4,7 @@
     <string name="connection_fragment">Connection</string>
 
     <string name="no_bluetooth">Please enable Bluetooth first!</string>
-    <string name="connection_device_list">Bluetooth devices</string>
+    <string name="connection_device_list">Select a device</string>
+    <string name="connection_bond">Open settings...</string>
     <string name="connection_disconnect">Disconnect</string>
 </resources>

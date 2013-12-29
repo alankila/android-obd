@@ -7,7 +7,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:paddingLeft="5pt"
+        android:paddingLeft="4pt"
         android:paddingRight="2pt"
         >
 
@@ -17,13 +17,11 @@
             android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large"
             android:text="@string/connection_device_list"/>
 
-        <ProgressBar
+        <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:indeterminate="true"
-            android:scaleX="0.7"
-            android:scaleY="0.7"
-            android:id="@+id/connection_scan_indicator" />
+            android:text="@string/connection_bond"
+            android:id="@+id/connection_bond" />
     </LinearLayout>
 
     <ListView android:id="@+id/connection_device_list"
@@ -37,8 +35,8 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
-        android:paddingLeft="5pt"
-        android:paddingRight="5pt"
+        android:paddingLeft="4pt"
+        android:paddingRight="2pt"
         >
 
         <TextView android:id="@+id/connection_phase"

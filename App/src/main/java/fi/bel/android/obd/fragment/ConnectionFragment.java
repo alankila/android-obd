@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,15 +25,13 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 
 import fi.bel.android.obd.R;
 import fi.bel.android.obd.thread.BluetoothRunnable;
 
-public class ConnectionFragment extends Fragment implements AdapterView.OnItemClickListener, View.OnClickListener {
-    protected enum Phase {
-        DISCONNECTED, CONNECTING, INITIALIZING, READY
-    }
-
+public class ConnectionFragment extends Fragment
+        implements AdapterView.OnItemClickListener, View.OnClickListener, BluetoothRunnable.Callback {
     public static final String ACTION_PHASE = "fi.bel.android.obd.PHASE";
 
     public static final String EXTRA_PHASE = "fi.bel.android.obd.PHASE";
@@ -40,8 +39,6 @@ public class ConnectionFragment extends Fragment implements AdapterView.OnItemCl
     protected static final String TAG = ConnectionFragment.class.getSimpleName();
 
     protected List<BluetoothDevice> devices = new ArrayList<>();
-
-    protected ProgressBar scanIndicator;
 
     protected ListView deviceList;
 
@@ -55,43 +52,19 @@ public class ConnectionFragment extends Fragment implements AdapterView.OnItemCl
 
     protected Thread bluetoothThread;
 
-    protected Phase phase;
+    protected BluetoothDevice currentDevice;
 
-    private final BroadcastReceiver scanReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            scanIndicator.setVisibility(
-                    intent.getAction().equals(BluetoothAdapter.ACTION_DISCOVERY_STARTED)
-                            ? View.VISIBLE : View.INVISIBLE
-            );
-        }
-    };
-
-    private final BroadcastReceiver deviceFoundReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            BluetoothDevice device = (BluetoothDevice) intent.getExtras().get(BluetoothDevice.EXTRA_DEVICE);
-            Log.i(TAG, "Found device: " + device.getName() + ", " + device.getAddress());
-            devices.add(device);
-            deviceListAdapter.notifyDataSetChanged();
-        }
-    };
+    protected BluetoothRunnable.Phase phase;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        phase = Phase.DISCONNECTED;
+        phase = BluetoothRunnable.Phase.DISCONNECTED;
     }
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        IntentFilter scanFilter = new IntentFilter();
-        scanFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-        scanFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        getActivity().registerReceiver(scanReceiver, scanFilter);
-        getActivity().registerReceiver(deviceFoundReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
-
         deviceListAdapter = new ArrayAdapter<BluetoothDevice>(getActivity(), 0, 0, devices) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
@@ -103,6 +76,7 @@ public class ConnectionFragment extends Fragment implements AdapterView.OnItemCl
                 tv1.setText(device.getName());
                 TextView tv2 = (TextView) convertView.findViewById(android.R.id.text2);
                 tv2.setText(device.getAddress());
+                convertView.setActivated(device.equals(currentDevice));
                 return convertView;
             }
         };
@@ -113,10 +87,16 @@ public class ConnectionFragment extends Fragment implements AdapterView.OnItemCl
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
         if (adapter.isEnabled()) {
             View view = inflater.inflate(R.layout.fragment_connection, null);
-            scanIndicator = (ProgressBar) view.findViewById(R.id.connection_scan_indicator);
+
+            Button bondButton = (Button) view.findViewById(R.id.connection_bond);
+            bondButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+                }
+            });
 
             deviceList = (ListView) view.findViewById(R.id.connection_device_list);
-            deviceList.setEnabled(bluetoothThread == null);
             deviceList.setAdapter(deviceListAdapter);
             deviceList.setOnItemClickListener(this);
 
@@ -124,6 +104,7 @@ public class ConnectionFragment extends Fragment implements AdapterView.OnItemCl
             disconnectButton.setOnClickListener(this);
 
             phaseText = (TextView) view.findViewById(R.id.connection_phase);
+
             return view;
         } else {
             return inflater.inflate(R.layout.fragment_connection_no_bt, null);
@@ -134,21 +115,10 @@ public class ConnectionFragment extends Fragment implements AdapterView.OnItemCl
     public void onResume() {
         super.onResume();
 
-        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        if (bluetoothThread == null && !adapter.isDiscovering()) {
-            devices.clear();
-            deviceListAdapter.notifyDataSetChanged();
-            adapter.startDiscovery();
-        }
+        devices.clear();
+        devices.addAll(BluetoothAdapter.getDefaultAdapter().getBondedDevices());
 
         updateUiState();
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        getActivity().unregisterReceiver(deviceFoundReceiver);
-        getActivity().unregisterReceiver(scanReceiver);
     }
 
     /**
@@ -161,39 +131,12 @@ public class ConnectionFragment extends Fragment implements AdapterView.OnItemCl
      */
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        if (adapter.isDiscovering()) {
-            adapter.cancelDiscovery();
-        }
+        currentDevice = devices.get(position);
+        deviceListAdapter.notifyDataSetChanged();
 
-        phase = Phase.CONNECTING;
-
-        BluetoothDevice device = devices.get(position);
-        bluetoothRunnable = new BluetoothRunnable(device, new Handler());
+        bluetoothRunnable = new BluetoothRunnable(currentDevice, new Handler(), this);
         bluetoothThread = new Thread(bluetoothRunnable);
         bluetoothThread.start();
-        updateUiState();
-
-        for (String command : new String[] { "ATSP0", "ATZ", "ATE0" }) {
-            bluetoothRunnable.addTransaction(new BluetoothRunnable.Transaction(command) {
-                @Override
-                 protected void success(String response) {
-                    if (getCommand().equals("ATSP0")) {
-                        phase = Phase.INITIALIZING;
-                    }
-
-                    if (getCommand().equals("ATE0")) {
-                        phase = Phase.READY;
-                    }
-
-                    updateUiState();
-                }
-
-                protected void failed() {
-                    onClick(null);
-                }
-            });
-        }
     }
 
     /**
@@ -212,9 +155,6 @@ public class ConnectionFragment extends Fragment implements AdapterView.OnItemCl
                 break;
             }
         }
-        bluetoothThread = null;
-        bluetoothRunnable = null;
-        phase = Phase.DISCONNECTED;
         updateUiState();
     }
 
@@ -222,8 +162,12 @@ public class ConnectionFragment extends Fragment implements AdapterView.OnItemCl
      * Update the UI state to reflect current state of the BT system.
      */
     private void updateUiState() {
-        deviceList.setEnabled(bluetoothThread == null);
-        disconnectButton.setEnabled(bluetoothThread != null);
+        deviceList.setEnabled(phase == BluetoothRunnable.Phase.DISCONNECTED);
+        if (deviceList.isEnabled()) {
+            currentDevice = null;
+            deviceListAdapter.notifyDataSetChanged();
+        }
+        disconnectButton.setEnabled(phase != BluetoothRunnable.Phase.DISCONNECTED);
         phaseText.setText(phase.toString());
         Activity activity = getActivity();
         if (activity != null) {
@@ -237,7 +181,7 @@ public class ConnectionFragment extends Fragment implements AdapterView.OnItemCl
      * @return
      */
     public boolean canSendCommand() {
-        return phase == Phase.READY;
+        return phase == BluetoothRunnable.Phase.READY;
     }
 
     /**
@@ -247,5 +191,11 @@ public class ConnectionFragment extends Fragment implements AdapterView.OnItemCl
      */
     public void sendCommand(BluetoothRunnable.Transaction transaction) {
         bluetoothRunnable.addTransaction(transaction);
+    }
+
+    @Override
+    public void setPhase(BluetoothRunnable.Phase phase) {
+        this.phase = phase;
+        updateUiState();
     }
 }
