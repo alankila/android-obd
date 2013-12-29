@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">Android OBD Tool</string>
+    <string name="connection_fragment">Connection</string>
 
-    <string name="app_name">My Application</string>
-    <string name="title_screen_detail">Screen Detail</string>
-
+    <string name="no_bluetooth">Please enable Bluetooth first!</string>
+    <string name="connection_device_list">Bluetooth devices</string>
+    <string name="connection_disconnect">Disconnect</string>
 </resources>

@@ -27,6 +27,10 @@ public class ContainerActivity extends Activity implements ScreenListFragment.Ca
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_screen_list);
 
+        getFragmentManager()
+                .beginTransaction()
+                .replace(R.id.screen_list, new ScreenListFragment())
+                .commit();
         if (findViewById(R.id.screen_detail_container) != null) {
             mTwoPane = true;
             ((ScreenListFragment) getFragmentManager()
@@ -37,8 +41,8 @@ public class ContainerActivity extends Activity implements ScreenListFragment.Ca
 
     @Override
     public void onItemSelected(int id) {
-        Fragment fragment = FRAGMENTS.get(id);
         FragmentTransaction ft = getFragmentManager().beginTransaction();
+        Fragment fragment = FRAGMENTS.get(id);
         if (mTwoPane) {
             ft.replace(R.id.screen_detail_container, fragment);
         } else {
