@@ -4,13 +4,16 @@
   2. Bluetooth pairing (via Settings)
   3. List BD devices, ask user to associate with one.
 
+- Initialization (for "screen /dev/tty.OBDII-SPDDev")
 
-- Initialization:
+  * ATZ (reset)
+  * ATE1 (echo on)
+  * ATL1 (line feed on)
 
-  ATZ (reset)
-  ATE1 (echo on)
-  ATL1 (line feed crlf)
+- Initialization (for application)
 
+  * ATZ (reset)
+  * ATE0 (echo off)
 
 - Features:
 
