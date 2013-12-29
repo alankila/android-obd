@@ -8,7 +8,9 @@ import android.util.Log;
 import java.io.IOException;
 import java.nio.channels.Selector;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -69,8 +71,6 @@ public class BluetoothRunnable implements Runnable {
     private final Selector selector;
 
     private final BlockingQueue<Transaction> queue = new ArrayBlockingQueue<>(10);
-
-    private final byte[] data = new byte[1024];
 
     private final Set<String> supportedPid = new TreeSet<>();
 
@@ -144,6 +144,7 @@ public class BluetoothRunnable implements Runnable {
             }
         });
 
+        byte[] data = new byte[256];
         while (! Thread.interrupted()) {
             final Transaction transaction;
             try {

@@ -45,7 +45,14 @@ public class ContainerActivity extends Activity implements ScreenListFragment.Ca
         }
 
         if (savedInstanceState != null && savedInstanceState.containsKey("activeFragment")) {
-            onItemSelected(savedInstanceState.getInt("activeFragment"));
+            FragmentTransaction ft = getFragmentManager().beginTransaction();
+            activeFragment = FRAGMENTS.get(savedInstanceState.getInt("activeFragment"));
+            if (mTwoPane) {
+                ft.replace(R.id.screen_detail_container, activeFragment);
+            } else {
+                ft.replace(R.id.screen_list, activeFragment);
+            }
+            ft.commit();
         }
     }
 
