@@ -2,6 +2,7 @@ package fi.bel.android.obd.fragment;
 
 import android.app.Fragment;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,13 +30,13 @@ public class DataFragment extends Fragment {
 
     protected ConnectionFragment connectionFragment;
 
+    protected Handler handler;
+
     protected final Runnable refresh = new Runnable() {
         @Override
         public void run() {
-            if (isVisible()) {
-                refresh();
-                getView().postDelayed(this, 1000);
-            }
+            refresh();
+            handler.postDelayed(this, 5000);
         }
     };
 
@@ -51,6 +52,7 @@ public class DataFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         connectionFragment = (ConnectionFragment) ContainerActivity.FRAGMENTS.get(0);
+        handler = new Handler();
     }
 
     @Override
@@ -82,7 +84,13 @@ public class DataFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        getView().post(refresh);
+        handler.post(refresh);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        handler.removeCallbacks(refresh);
     }
 
     protected void refresh() {

@@ -18,9 +18,12 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import fi.bel.android.obd.R;
+import fi.bel.android.obd.service.DataService;
 import fi.bel.android.obd.thread.BluetoothRunnable;
 
 public class ConnectionFragment extends Fragment
@@ -110,8 +113,12 @@ public class ConnectionFragment extends Fragment
 
         devices.clear();
         devices.addAll(BluetoothAdapter.getDefaultAdapter().getBondedDevices());
-
-        updateUiState();
+        Collections.sort(devices, new Comparator<BluetoothDevice>() {
+            @Override
+            public int compare(BluetoothDevice lhs, BluetoothDevice rhs) {
+                return lhs.getName().compareTo(rhs.getName());
+            }
+        });
     }
 
     /**
@@ -204,6 +211,13 @@ public class ConnectionFragment extends Fragment
      */
     @Override
     public void setPhase(BluetoothRunnable.Phase phase) {
+        /* Start/Stop dataservice depending on connection phase. */
+        if (this.phase != BluetoothRunnable.Phase.READY && phase == BluetoothRunnable.Phase.READY) {
+            getActivity().startService(new Intent(getActivity(), DataService.class));
+        }
+        if (this.phase == BluetoothRunnable.Phase.READY && phase != BluetoothRunnable.Phase.READY) {
+            getActivity().stopService(new Intent(getActivity(), DataService.class));
+        }
         this.phase = phase;
         updateUiState();
     }
