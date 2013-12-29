@@ -1,7 +1,5 @@
 package fi.bel.android.obd.thread;
 
-import android.app.Activity;
-import android.app.Fragment;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
@@ -10,11 +8,12 @@ import android.util.Log;
 import java.io.IOException;
 import java.nio.channels.Selector;
 import java.nio.charset.Charset;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-
-import fi.bel.android.obd.fragment.ConnectionFragment;
 
 /**
  * This class implements a simple command-response protocol over the bluetooth
@@ -73,6 +72,8 @@ public class BluetoothRunnable implements Runnable {
 
     private final byte[] data = new byte[1024];
 
+    private final Set<String> supportedPid = new TreeSet<>();
+
     public BluetoothRunnable(BluetoothDevice device, Handler handler, Callback callback) {
         this.device = device;
         this.handler = handler;
@@ -108,6 +109,9 @@ public class BluetoothRunnable implements Runnable {
                 }
             });
         }
+
+        supportedPid.add("00"); /* 00 is our entry point, this PID must always exist. */
+        checkPid(0);
 
         connectAndRun();
 
@@ -195,5 +199,34 @@ public class BluetoothRunnable implements Runnable {
 
     public void addTransaction(Transaction transaction) {
         queue.add(transaction);
+    }
+
+    public boolean pidSupported(String pid) {
+        return supportedPid.contains(pid);
+    }
+
+    /**
+     * Discover all known PID values
+     *
+     *
+     */
+    private void checkPid(final int i) {
+        queue.add(new Transaction(String.format("%02x %02x %d", 1, i, 1)) {
+            @Override
+            protected void success(String response) {
+                int data = Integer.valueOf(response.substring(4), 16);
+                for (int j = 0; j < 32; j ++) {
+                    if ((data & (1 << (31 - j))) != 0) {
+                        String s = String.format("%02x", i + j);
+                        supportedPid.add(s);
+                        Log.i(TAG, "PID: " + s);
+                    }
+                }
+
+                if (i < 256 - 32 && supportedPid.contains(String.format("%02x", i + 32))) {
+                    checkPid(i + 32);
+                }
+            }
+        });
     }
 }

@@ -3,8 +3,13 @@
     <string name="app_name">Android OBD Tool</string>
     <string name="connection_fragment">Connection</string>
 
-    <string name="no_bluetooth">Please enable Bluetooth first!</string>
+    <string name="connection_no_bluetooth">Please enable Bluetooth first!</string>
     <string name="connection_device_list">Select a device</string>
     <string name="connection_bond">Open settings...</string>
     <string name="connection_disconnect">Disconnect</string>
+
+    <string name="fault_selfcheck">Engine self-check status</string>
+    <string name="fault_detected">Detected trouble codes</string>
+    <string name="fault_clear">Reset self-check and trouble codes</string>
+    <string name="fault_reference">Known trouble codes</string>
 </resources>

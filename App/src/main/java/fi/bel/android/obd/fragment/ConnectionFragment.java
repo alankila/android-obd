@@ -4,15 +4,10 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,12 +15,10 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 import fi.bel.android.obd.R;
 import fi.bel.android.obd.thread.BluetoothRunnable;
@@ -146,7 +139,7 @@ public class ConnectionFragment extends Fragment
      */
     @Override
     public void onClick(View v) {
-        /* This should be fast, so we just wait on the main thread. */
+        /* This should be fast to do, so we just wait on the main thread. */
         while (bluetoothThread.isAlive()) {
             bluetoothThread.interrupt();
             try {
@@ -155,7 +148,6 @@ public class ConnectionFragment extends Fragment
                 break;
             }
         }
-        updateUiState();
     }
 
     /**
@@ -165,10 +157,13 @@ public class ConnectionFragment extends Fragment
         deviceList.setEnabled(phase == BluetoothRunnable.Phase.DISCONNECTED);
         if (deviceList.isEnabled()) {
             currentDevice = null;
+            bluetoothRunnable = null;
+            bluetoothThread = null;
             deviceListAdapter.notifyDataSetChanged();
         }
         disconnectButton.setEnabled(phase != BluetoothRunnable.Phase.DISCONNECTED);
         phaseText.setText(phase.toString());
+
         Activity activity = getActivity();
         if (activity != null) {
             activity.sendBroadcast(new Intent(ACTION_PHASE).putExtra(EXTRA_PHASE, phase));
@@ -193,6 +188,20 @@ public class ConnectionFragment extends Fragment
         bluetoothRunnable.addTransaction(transaction);
     }
 
+    /**
+     * Can we perform specific PID-related operation?
+     *
+     * @param pid
+     */
+    public boolean pidSupported(String pid) {
+        return bluetoothRunnable != null && bluetoothRunnable.pidSupported(pid);
+    }
+
+    /**
+     * Set current operational phase.
+     *
+     * @param phase
+     */
     @Override
     public void setPhase(BluetoothRunnable.Phase phase) {
         this.phase = phase;

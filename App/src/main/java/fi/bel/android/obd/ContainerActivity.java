@@ -10,11 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import fi.bel.android.obd.fragment.ConnectionFragment;
+import fi.bel.android.obd.fragment.FaultFragment;
 
 public class ContainerActivity extends Activity implements ScreenListFragment.Callbacks {
-    protected static final List<Fragment> FRAGMENTS = new ArrayList<>();
+    public static final List<Fragment> FRAGMENTS = new ArrayList<>();
     static {
         FRAGMENTS.add(new ConnectionFragment());
+        FRAGMENTS.add(new FaultFragment());
         for (Fragment f : FRAGMENTS) {
             f.setRetainInstance(true);
         }
