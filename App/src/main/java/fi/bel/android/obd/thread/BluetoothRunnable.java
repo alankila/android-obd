@@ -16,6 +16,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * This class implements a simple command-response protocol over the bluetooth
@@ -48,7 +49,7 @@ public class BluetoothRunnable implements Runnable {
     }
 
     public enum Phase {
-        DISCONNECTED, CONNECTING, CONNECTED, INITIALIZING, READY
+        DISCONNECTED, CONNECTING, INITIALIZING, READY
     }
 
     public interface Callback {
@@ -72,7 +73,7 @@ public class BluetoothRunnable implements Runnable {
 
     private final BlockingQueue<Transaction> queue = new ArrayBlockingQueue<>(10);
 
-    private final Set<String> supportedPid = new TreeSet<>();
+    private final Set<String> supportedPid = new ConcurrentSkipListSet<>();
 
     public BluetoothRunnable(BluetoothDevice device, Handler handler, Callback callback) {
         this.device = device;
@@ -96,18 +97,7 @@ public class BluetoothRunnable implements Runnable {
 
         queue.clear();
         for (String command : new String[] { "ATSP0", "ATZ", "ATE0" }) {
-            queue.add(new Transaction(command) {
-                @Override
-                protected void success(String response) {
-                    if (getCommand().equals("ATSP0")) {
-                        callback.setPhase(Phase.INITIALIZING);
-                    }
-
-                    if (getCommand().equals("ATE0")) {
-                        callback.setPhase(Phase.READY);
-                    }
-                }
-            });
+            queue.add(new Transaction(command));
         }
 
         supportedPid.add("00"); /* 00 is our entry point, this PID must always exist. */
@@ -140,7 +130,7 @@ public class BluetoothRunnable implements Runnable {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                callback.setPhase(Phase.CONNECTED);
+                callback.setPhase(Phase.INITIALIZING);
             }
         });
 
@@ -166,7 +156,6 @@ public class BluetoothRunnable implements Runnable {
                     int length = socket.getInputStream().read(data);
                     String piece = new String(data, 0, length, ISO88591);
                     piece = piece.replaceAll("\\s", "");
-                    Log.i(TAG, "fragment: " + piece);
                     response.append(piece);
                 }
                 response.deleteCharAt(response.length() - 1);
@@ -231,12 +220,13 @@ public class BluetoothRunnable implements Runnable {
                     if ((data & (1 << (31 - j))) != 0) {
                         String s = String.format("%02x", 1 + i + j);
                         supportedPid.add(s);
-                        Log.i(TAG, "PID: " + s);
                     }
                 }
 
                 if (i != 0xe0 && supportedPid.contains(String.format("%02x", i + 32))) {
                     checkPid(i + 32);
+                } else {
+                    callback.setPhase(Phase.READY);
                 }
             }
         });
