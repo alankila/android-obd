@@ -1,6 +1,8 @@
 package fi.bel.android.obd.fragment;
 
 import android.app.Fragment;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.LayoutInflater;
@@ -23,10 +25,15 @@ import java.util.Map;
 
 import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
+import fi.bel.android.obd.service.DataService;
 import fi.bel.android.obd.thread.BluetoothRunnable;
 
 public class DataFragment extends Fragment {
     protected static final String TAG = DataFragment.class.getSimpleName();
+
+    protected SQLiteDatabase db;
+
+    protected SQLiteStatement queryStatement;
 
     protected ConnectionFragment connectionFragment;
 
@@ -84,6 +91,8 @@ public class DataFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        db = DataService.openDatabase(getActivity());
+        queryStatement = db.compileStatement("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?");
         handler.post(refresh);
     }
 
@@ -91,6 +100,7 @@ public class DataFragment extends Fragment {
     public void onPause() {
         super.onPause();
         handler.removeCallbacks(refresh);
+        db.close();
     }
 
     protected void refresh() {
@@ -99,6 +109,9 @@ public class DataFragment extends Fragment {
             String pid = String.format("%02d", i);
             if (connectionFragment.pidSupported(pid)) {
                 data.add(pid);
+                queryStatement.bindString(1, pid);
+                float value = Float.parseFloat(queryStatement.simpleQueryForString());
+                dataMap.put(pid, value);
             }
         }
         dataListAdapter.notifyDataSetChanged();
