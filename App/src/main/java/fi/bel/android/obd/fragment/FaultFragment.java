@@ -27,6 +27,7 @@ import java.util.Map;
 import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
 import fi.bel.android.obd.thread.BluetoothRunnable;
+import fi.bel.android.obd.util.OBD;
 
 public class FaultFragment extends Fragment {
     protected static final String TAG = FaultFragment.class.getSimpleName();
@@ -59,11 +60,7 @@ public class FaultFragment extends Fragment {
         EGR_VVT_SYSTEM          /* C7/D7 */
     }
 
-    protected static final Charset ISO88591 = Charset.forName("ISO8859-1");
-
     protected ConnectionFragment connectionFragment;
-
-    protected Map<String, String> faultMap = new HashMap<>();
 
     protected List<SelfcheckTypes> selfcheck = new ArrayList<>();
 
@@ -85,28 +82,6 @@ public class FaultFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         connectionFragment = (ConnectionFragment) ContainerActivity.FRAGMENTS.get(0);
-        try {
-            InputStream stream = getResources().getAssets().open("codes.txt");
-            BufferedReader br = new BufferedReader(new InputStreamReader(stream, ISO88591));
-            String line;
-            boolean header = true;
-            while (null != (line = br.readLine())) {
-                line = line.trim();
-                if (header) {
-                     /* Ignoring for now */
-                     continue;
-                }
-                if (line.isEmpty()) {
-                     header = true;
-                     continue;
-                }
-                String[] code = line.split("\\s", 2);
-                faultMap.put(code[0], code[1]);
-            }
-            stream.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -222,6 +197,7 @@ public class FaultFragment extends Fragment {
                 tv1.setText(faultCode);
 
                 TextView tv2 = (TextView) convertView.findViewById(android.R.id.text2);
+                Map<String, String> faultMap = OBD.getFaultMap(getContext());
                 tv2.setText(faultMap.get(faultCode));
 
                 return convertView;
