@@ -26,15 +26,18 @@ public class DataService extends Service {
     protected static final int COLLECT_INTERVAL_MS = 10000;
 
     public static SQLiteDatabase openDatabase(Context context) {
+        context.getDatabasePath(".").getParentFile().mkdirs();
         SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("data"), null);
         db.execSQL("CREATE TABLE IF NOT EXISTS data (timestamp long, pid varchar(2), value float)");
-        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS i_data_pid ON data (pid, rowid)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS i_data_pid ON data (pid)");
         return db;
     }
 
     protected PowerManager.WakeLock wakelock;
 
     protected SQLiteDatabase db;
+
+    protected SQLiteStatement idStatement;
 
     protected SQLiteStatement valueStatement;
 
@@ -85,7 +88,8 @@ public class DataService extends Service {
         wakelock.acquire();
 
         db = openDatabase(this);
-        valueStatement = db.compileStatement("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)");
+        idStatement = db.compileStatement("SELECT max(rowid) FROM data WHERE pid = ?");
+        valueStatement = db.compileStatement("SELECT value FROM data WHERE rowid = ?");
         insertStatement = db.compileStatement("INSERT INTO data (timestamp, pid, value) VALUES (?, ?, ?)");
 
         connectionFragment = (ConnectionFragment) ContainerActivity.FRAGMENTS.get(0);
@@ -112,7 +116,9 @@ public class DataService extends Service {
                     @Override
                     protected void success(String response) {
                         float newValue = OBD.convert(pid, response);
-                        valueStatement.bindString(1, pid);
+                        idStatement.bindString(1, pid);
+                        long rowid = idStatement.simpleQueryForLong();
+                        valueStatement.bindLong(1, rowid);
                         float dbValue = Float.parseFloat(valueStatement.simpleQueryForString());
                         if (dbValue != newValue) {
                             insertStatement.bindLong(1, System.currentTimeMillis());

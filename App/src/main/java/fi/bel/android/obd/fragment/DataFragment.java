@@ -33,7 +33,9 @@ public class DataFragment extends Fragment {
 
     protected SQLiteDatabase db;
 
-    protected SQLiteStatement queryStatement;
+    protected SQLiteStatement idStatement;
+
+    protected SQLiteStatement valueStatement;
 
     protected ConnectionFragment connectionFragment;
 
@@ -92,7 +94,8 @@ public class DataFragment extends Fragment {
     public void onResume() {
         super.onResume();
         db = DataService.openDatabase(getActivity());
-        queryStatement = db.compileStatement("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?");
+        idStatement = db.compileStatement("SELECT max(rowid) FROM data WHERE pid = ?");
+        valueStatement = db.compileStatement("SELECT value FROM data WHERE rowid = ?");
         handler.post(refresh);
     }
 
@@ -109,8 +112,10 @@ public class DataFragment extends Fragment {
             String pid = String.format("%02d", i);
             if (connectionFragment.pidSupported(pid)) {
                 data.add(pid);
-                queryStatement.bindString(1, pid);
-                float value = Float.parseFloat(queryStatement.simpleQueryForString());
+                idStatement.bindString(1, pid);
+                long rowid = idStatement.simpleQueryForLong();
+                valueStatement.bindLong(1, rowid);
+                float value = Float.parseFloat(valueStatement.simpleQueryForString());
                 dataMap.put(pid, value);
             }
         }
