@@ -27,31 +27,28 @@ public class DTCFragment extends Fragment {
 
     protected List<String> fault = new ArrayList<>();
 
-    protected ListAdapter faultListAdapter;
+    protected ArrayAdapter<String> faultListAdapter;
 
     protected ListView faultList;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        Map<String, List<String>> faultHeaderMap = OBD.getFaultHeaderMap(getActivity());
-        Map<String, String> faultMap = OBD.getFaultMap(getActivity());
-
-        for (String s1 : faultHeaderMap.keySet()) {
-            fault.add(s1);
-            for (String s2 : faultHeaderMap.get(s1)) {
-                fault.add(s2 + " " + faultMap.get(s2));
-            }
-        }
-    }
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_dtc, null);
-        search = (SearchView) view.findViewById((R.id.dtc_search);
-        faultList = (ListView) view.findViewById(R.id.dtc_list);
-        faultList.setAdapter(new ArrayAdapter(getActivity(), 0, 0, fault) {
+        search = (SearchView) view.findViewById(R.id.dtc_search);
+        search.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return onQueryTextChange(query);
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                refresh();
+                return true;
+            }
+
+        });
+        faultListAdapter = new ArrayAdapter<String>(getActivity(), 0, 0, fault) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 if (convertView == null) {
@@ -59,8 +56,35 @@ public class DTCFragment extends Fragment {
                 }
                 TextView tv1 = (TextView) convertView.findViewById(android.R.id.text1);
                 tv1.setText(fault.get(position));
+                return convertView;
             }
-        });
+        };
+
+        faultList = (ListView) view.findViewById(R.id.dtc_list);
+        faultList.setAdapter(faultListAdapter);
+        refresh();
         return view;
+    }
+
+    private void refresh() {
+        String keywords = search.getQuery().toString().toLowerCase();
+        Map<String, List<String>> faultHeaderMap = OBD.getFaultHeaderMap(getActivity());
+        Map<String, String> faultMap = OBD.getFaultMap(getActivity());
+
+        fault.clear();
+        for (String s1 : faultHeaderMap.keySet()) {
+            boolean s1Added = false;
+            for (String s2 : faultHeaderMap.get(s1)) {
+                String v2 = faultMap.get(s2);
+                if (s2.toLowerCase().contains(keywords) || v2.toLowerCase().contains(keywords)) {
+                    if (! s1Added) {
+                        fault.add(s1);
+                        s1Added = true;
+                    }
+                    fault.add(s2 + " " + v2);
+                }
+            }
+        }
+        faultListAdapter.notifyDataSetChanged();
     }
 }

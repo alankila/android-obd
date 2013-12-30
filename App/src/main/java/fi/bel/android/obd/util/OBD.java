@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 public class OBD {
-    protected static final Charset ISO88591 = Charset.forName("ISO8859-1");
+    protected static final Charset UTF8 = Charset.forName("UTF-8");
 
     protected static Map<String, List<String>> faultHeaderMap;
 
@@ -40,7 +40,7 @@ public class OBD {
         faultMap = new HashMap<>();
         try {
             InputStream stream = context.getAssets().open("codes.txt");
-            BufferedReader br = new BufferedReader(new InputStreamReader(stream, ISO88591));
+            BufferedReader br = new BufferedReader(new InputStreamReader(stream, UTF8));
             String line;
             List<String> activeHeader = null;
             boolean header = true;
@@ -48,6 +48,7 @@ public class OBD {
                 line = line.trim();
                 if (header) {
                     faultHeaderMap.put(line, activeHeader = new ArrayList<String>());
+                    header = false;
                     continue;
                 }
                 if (line.isEmpty()) {
