@@ -220,8 +220,8 @@ public class BluetoothRunnable implements Runnable {
                         int pid = i + j + 1;
                         String s = String.format("%02x", pid);
                         if (pid >= 0x14 && pid <= 0x1b) {
-                            supportedPid.add(s + "-1");
-                            supportedPid.add(s + "-2");
+                            supportedPid.add(s + "_1");
+                            supportedPid.add(s + "_2");
                         } else {
                             supportedPid.add(s);
                         }

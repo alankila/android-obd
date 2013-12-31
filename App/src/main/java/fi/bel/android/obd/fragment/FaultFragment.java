@@ -96,7 +96,12 @@ public class FaultFragment extends Fragment {
                 SelfcheckTypes selfcheckType = selfcheck.get(position);
 
                 TextView name = (TextView) convertView.findViewById(R.id.fault_item_name);
-                name.setText(selfcheckType.toString());
+                try {
+                    name.setText((int) R.string.class.getField(selfcheckType.toString()).get(null));
+                }
+                catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
 
                 TextView state = (TextView) convertView.findViewById(R.id.fault_item_state);
                 switch (selfcheckType) {

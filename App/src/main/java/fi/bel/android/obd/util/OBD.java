@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 public class OBD {
-    protected static final Charset UTF8 = Charset.forName("UTF-8");
+    protected static final Charset UTF8 = Charset.forName("UTF_8");
 
     protected static Map<String, List<String>> faultHeaderMap;
 
@@ -90,23 +90,23 @@ public class OBD {
                 return "deg";
             case "10":
                 return "g/s";
-            case "14-1":
-            case "15-1":
-            case "16-1":
-            case "17-1":
-            case "18-1":
-            case "19-1":
-            case "1a-1":
-            case "1b-1":
+            case "14_1":
+            case "15_1":
+            case "16_1":
+            case "17_1":
+            case "18_1":
+            case "19_1":
+            case "1a_1":
+            case "1b_1":
                 return "V";
-            case "14-2":
-            case "15-2":
-            case "16-2":
-            case "17-2":
-            case "18-2":
-            case "19-2":
-            case "1a-2":
-            case "1b-2":
+            case "14_2":
+            case "15_2":
+            case "16_2":
+            case "17_2":
+            case "18_2":
+            case "19_2":
+            case "1a_2":
+            case "1b_2":
                 return "%";
             case "1f":
                 return "s";
@@ -143,23 +143,23 @@ public class OBD {
                 return (Integer.parseInt(response.substring(4, 5), 16) - 128) / 2.0f;
             case "10":
                 return Integer.parseInt(response.substring(4, 6), 16) / 100.0f;
-            case "14-1":
-            case "15-1":
-            case "16-1":
-            case "17-1":
-            case "18-1":
-            case "19-1":
-            case "1a-1":
-            case "1b-1":
+            case "14_1":
+            case "15_1":
+            case "16_1":
+            case "17_1":
+            case "18_1":
+            case "19_1":
+            case "1a_1":
+            case "1b_1":
                 return Integer.parseInt(response.substring(4, 5)) / 200.0f;
-            case "14-2":
-            case "15-2":
-            case "16-2":
-            case "17-2":
-            case "18-2":
-            case "19-2":
-            case "1a-2":
-            case "1b-2":
+            case "14_2":
+            case "15_2":
+            case "16_2":
+            case "17_2":
+            case "18_2":
+            case "19_2":
+            case "1a_2":
+            case "1b_2":
                 return (Integer.parseInt(response.substring(5, 6)) - 128) * 100 / 128.0f;
 
             default:
