@@ -197,13 +197,12 @@ public class BluetoothRunnable implements Runnable {
     }
 
     /**
-     * Returns true if particular PID is supported on the device
+     * Returns the set of supported PIDs
      *
-     * @param pid
      * @return true if supported
      */
-    public boolean pidSupported(String pid) {
-        return supportedPid.contains(pid);
+    public Set<String> pid() {
+        return supportedPid;
     }
 
     /**
@@ -218,8 +217,14 @@ public class BluetoothRunnable implements Runnable {
                 int data = (int) Long.parseLong(response.substring(4), 16);
                 for (int j = 0; j < 32; j ++) {
                     if ((data & (1 << (31 - j))) != 0) {
-                        String s = String.format("%02x", 1 + i + j);
-                        supportedPid.add(s);
+                        int pid = i + j + 1;
+                        String s = String.format("%02x", pid);
+                        if (pid >= 0x14 && pid <= 0x1b) {
+                            supportedPid.add(s + "-1");
+                            supportedPid.add(s + "-2");
+                        } else {
+                            supportedPid.add(s);
+                        }
                     }
                 }
 

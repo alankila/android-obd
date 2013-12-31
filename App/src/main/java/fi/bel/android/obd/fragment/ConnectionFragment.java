@@ -21,7 +21,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
+import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
 import fi.bel.android.obd.service.DataService;
 import fi.bel.android.obd.thread.BluetoothRunnable;
@@ -100,7 +102,6 @@ public class ConnectionFragment extends Fragment
             disconnectButton.setOnClickListener(this);
 
             phaseText = (TextView) view.findViewById(R.id.connection_phase);
-
             return view;
         } else {
             return inflater.inflate(R.layout.fragment_connection_no_bt, null);
@@ -119,6 +120,8 @@ public class ConnectionFragment extends Fragment
                 return lhs.getName().compareTo(rhs.getName());
             }
         });
+        deviceListAdapter.notifyDataSetChanged();
+        updateUiState();
     }
 
     /**
@@ -171,10 +174,7 @@ public class ConnectionFragment extends Fragment
         disconnectButton.setEnabled(phase != BluetoothRunnable.Phase.DISCONNECTED);
         phaseText.setText(phase.toString());
 
-        Activity activity = getActivity();
-        if (activity != null) {
-            activity.sendBroadcast(new Intent(ACTION_PHASE).putExtra(EXTRA_PHASE, phase));
-        }
+        ContainerActivity.APPLICATION_CONTEXT.sendBroadcast(new Intent(ACTION_PHASE).putExtra(EXTRA_PHASE, phase));
     }
 
     /**
@@ -196,12 +196,10 @@ public class ConnectionFragment extends Fragment
     }
 
     /**
-     * Can we perform specific PID-related operation?
-     *
-     * @param pid
+     * Return the set of known PIDs
      */
-    public boolean pidSupported(String pid) {
-        return bluetoothRunnable != null && bluetoothRunnable.pidSupported(pid);
+    public Set<String> pid() {
+        return bluetoothRunnable != null ? bluetoothRunnable.pid() : Collections.<String>emptySet();
     }
 
     /**
@@ -213,10 +211,10 @@ public class ConnectionFragment extends Fragment
     public void setPhase(BluetoothRunnable.Phase phase) {
         /* Start/Stop dataservice depending on connection phase. */
         if (this.phase != BluetoothRunnable.Phase.READY && phase == BluetoothRunnable.Phase.READY) {
-            getActivity().startService(new Intent(getActivity(), DataService.class));
+            ContainerActivity.APPLICATION_CONTEXT.startService(new Intent(ContainerActivity.APPLICATION_CONTEXT, DataService.class));
         }
         if (this.phase == BluetoothRunnable.Phase.READY && phase != BluetoothRunnable.Phase.READY) {
-            getActivity().stopService(new Intent(getActivity(), DataService.class));
+            ContainerActivity.APPLICATION_CONTEXT.stopService(new Intent(ContainerActivity.APPLICATION_CONTEXT, DataService.class));
         }
         this.phase = phase;
         updateUiState();

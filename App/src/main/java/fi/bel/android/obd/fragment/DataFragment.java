@@ -103,12 +103,7 @@ public class DataFragment extends Fragment {
 
     protected void refresh() {
         data.clear();
-        for (int i = 0; i < 256; i ++) {
-            String pid = String.format("%02x", i);
-            if (! connectionFragment.pidSupported(pid)) {
-                continue;
-            }
-
+        for (String pid : connectionFragment.pid()) {
             Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });
             if (cursor.moveToFirst()) {
                 float dbValue = cursor.getFloat(0);

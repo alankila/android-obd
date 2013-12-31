@@ -3,6 +3,7 @@ package fi.bel.android.obd;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -26,6 +27,8 @@ public class ContainerActivity extends Activity implements ScreenListFragment.Ca
         }
     }
 
+    public static Context APPLICATION_CONTEXT;
+
     private boolean mTwoPane;
 
     private Fragment activeFragment;
@@ -34,6 +37,8 @@ public class ContainerActivity extends Activity implements ScreenListFragment.Ca
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_screen_list);
+
+        APPLICATION_CONTEXT = getApplicationContext();
 
         getFragmentManager()
                 .beginTransaction()

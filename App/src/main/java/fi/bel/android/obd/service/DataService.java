@@ -107,31 +107,28 @@ public class DataService extends Service {
     }
 
     private void collect() {
-        for (int i = 1; i < 0x100; i += 1) {
-            final String pid = String.format("%02x", i);
-            if (connectionFragment.pidSupported(pid) && OBD.unit(pid) != null) {
-                String cmd = String.format("%02x %s %d", 1, pid, 1);
-                connectionFragment.sendCommand(new BluetoothRunnable.Transaction(cmd) {
-                    @Override
-                    protected void success(String response) {
-                        float newValue = OBD.convert(pid, response);
+        for (final String pid : connectionFragment.pid()) {
+            String cmd = String.format("%02x %s %d", 1, pid, 1);
+            connectionFragment.sendCommand(new BluetoothRunnable.Transaction(cmd) {
+                @Override
+                protected void success(String response) {
+                    float newValue = OBD.convert(pid, response);
 
-                        Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });
-                        if (cursor.moveToFirst()) {
-                            float dbValue = cursor.getFloat(0);
-                            if (dbValue == newValue) {
-                                return;
-                            }
+                    Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });
+                    if (cursor.moveToFirst()) {
+                        float dbValue = cursor.getFloat(0);
+                        if (dbValue == newValue) {
+                            return;
                         }
-                        cursor.close();
-
-                        insertStatement.bindLong(1, System.currentTimeMillis());
-                        insertStatement.bindString(2, pid);
-                        insertStatement.bindDouble(3, newValue);
-                        insertStatement.executeInsert();
                     }
-                });
-            }
+                    cursor.close();
+
+                    insertStatement.bindLong(1, System.currentTimeMillis());
+                    insertStatement.bindString(2, pid);
+                    insertStatement.bindDouble(3, newValue);
+                    insertStatement.executeInsert();
+                }
+            });
         }
     }
 }

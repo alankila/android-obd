@@ -236,7 +236,7 @@ public class FaultFragment extends Fragment {
         selfcheckStatus = 0;
         selfcheck.clear();
         selfcheckListAdapter.clear();
-        if (enabled && connectionFragment.pidSupported("01")) {
+        if (enabled && connectionFragment.pid().contains("01")) {
             connectionFragment.sendCommand(new BluetoothRunnable.Transaction("01 01 1") {
                 @Override
                 protected void success(String response) {
