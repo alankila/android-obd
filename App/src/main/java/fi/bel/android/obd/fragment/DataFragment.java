@@ -28,6 +28,7 @@ import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
 import fi.bel.android.obd.service.DataService;
 import fi.bel.android.obd.thread.BluetoothRunnable;
+import fi.bel.android.obd.util.OBD;
 
 public class DataFragment extends Fragment {
     protected static final String TAG = DataFragment.class.getSimpleName();
@@ -70,14 +71,14 @@ public class DataFragment extends Fragment {
                 if (convertView == null) {
                     convertView = getActivity().getLayoutInflater().inflate(R.layout.fragment_data_item, null);
                 }
-                String pidKey = data.get(position);
-                float pidValue = dataMap.get(pidKey);
+                String pid = data.get(position);
+                float pidValue = dataMap.get(pid);
 
                 TextView key = (TextView) convertView.findViewById(R.id.data_item_key);
-                key.setText(pidKey);
+                key.setText(pid);
 
                 TextView value = (TextView) convertView.findViewById(R.id.data_item_value);
-                value.setText(String.format("%.2f", pidValue));
+                value.setText(String.format("%.2f %s", pidValue, OBD.unit(pid)));
 
                 return convertView;
             }
