@@ -1,26 +1,16 @@
 package fi.bel.android.obd.fragment;
 
 import android.app.Fragment;
-import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +22,7 @@ import fi.bel.android.obd.util.OBD;
 public class FaultFragment extends Fragment {
     protected static final String TAG = FaultFragment.class.getSimpleName();
 
-    protected enum SelfcheckTypes {
+    protected enum SelfCheckTypes {
         MIL,                    /* A7 */
         FAULT_CODES,            /* A6-A0 */
 
@@ -62,11 +52,11 @@ public class FaultFragment extends Fragment {
 
     protected ConnectionFragment connectionFragment;
 
-    protected List<SelfcheckTypes> selfcheck = new ArrayList<>();
+    protected List<SelfCheckTypes> selfCheck = new ArrayList<>();
 
-    protected ArrayAdapter<SelfcheckTypes> selfcheckListAdapter;
+    protected ArrayAdapter<SelfCheckTypes> selfCheckListAdapter;
 
-    protected ListView selfcheckList;
+    protected ListView selfCheckList;
 
     protected ArrayAdapter<String> detectedListAdapter;
 
@@ -76,7 +66,7 @@ public class FaultFragment extends Fragment {
 
     protected Button clearButton;
 
-    protected int selfcheckStatus;
+    protected int selfCheckStatus;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -87,13 +77,13 @@ public class FaultFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_fault, null);
-        selfcheckListAdapter = new ArrayAdapter<SelfcheckTypes>(getActivity(), 0, 0, selfcheck) {
+        selfCheckListAdapter = new ArrayAdapter<SelfCheckTypes>(getActivity(), 0, 0, selfCheck) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 if (convertView == null) {
                     convertView = getActivity().getLayoutInflater().inflate(R.layout.fragment_fault_item, null);
                 }
-                SelfcheckTypes selfcheckType = selfcheck.get(position);
+                SelfCheckTypes selfcheckType = selfCheck.get(position);
 
                 TextView name = (TextView) convertView.findViewById(R.id.fault_item_name);
                 try {
@@ -106,89 +96,89 @@ public class FaultFragment extends Fragment {
                 TextView state = (TextView) convertView.findViewById(R.id.fault_item_state);
                 switch (selfcheckType) {
                     case MIL:
-                        state.setText((selfcheckStatus & 0x80000000) != 0 ? "On" : "Off");
+                        state.setText((selfCheckStatus & 0x80000000) != 0 ? "On" : "Off");
                         break;
 
                     case FAULT_CODES:
-                        state.setText(String.valueOf((selfcheckStatus >> 24) & 0x7f));
+                        state.setText(String.valueOf((selfCheckStatus >> 24) & 0x7f));
                         break;
 
                     case MISFIRE:
-                        state.setText((selfcheckStatus & 0x10000) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x10000) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case FUEL_SYSTEM:
-                        state.setText((selfcheckStatus & 0x20000) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x20000) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case COMPONENTS:
-                        state.setText((selfcheckStatus & 0x40000) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x40000) != 0 ? "Not ready" : "Ready");
                         break;
 
                     /* Diesel */
                     case CATALYST:
-                        state.setText((selfcheckStatus & 0x01) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x01) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case HEATED_CATALYST:
-                        state.setText((selfcheckStatus & 0x02) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x02) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case EVAPORATIVE_SYSTEM:
-                        state.setText((selfcheckStatus & 0x04) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x04) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case SECONDARY_AIR_SYSTEM:
-                        state.setText((selfcheckStatus & 0x08) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x08) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case AC_REFRIDGERANT:
-                        state.setText((selfcheckStatus & 0x10) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x10) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case OXYGEN_SENSOR:
-                        state.setText((selfcheckStatus & 0x20) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x20) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case OXYGEN_SENSOR_HEATER:
-                        state.setText((selfcheckStatus & 0x40) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x40) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case EGR_SYSTEM:
-                        state.setText((selfcheckStatus & 0x80) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x80) != 0 ? "Not ready" : "Ready");
                         break;
 
                     /* Spark */
                     case NMHC_CATALYST:
-                        state.setText((selfcheckStatus & 0x01) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x01) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case NOx_SCR_MONITOR:
-                        state.setText((selfcheckStatus & 0x02) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x02) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case BOOST_PRESSURE:
-                        state.setText((selfcheckStatus & 0x08) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x08) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case EXHAUST_GAS_SENSOR:
-                        state.setText((selfcheckStatus & 0x20) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x20) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case PM_FILTER_MONITORING:
-                        state.setText((selfcheckStatus & 0x40) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x40) != 0 ? "Not ready" : "Ready");
                         break;
 
                     case EGR_VVT_SYSTEM:
-                        state.setText((selfcheckStatus & 0x80) != 0 ? "Not ready" : "Ready");
+                        state.setText((selfCheckStatus & 0x80) != 0 ? "Not ready" : "Ready");
                         break;
                 }
 
                 return convertView;
             }
         };
-        selfcheckList = (ListView) view.findViewById(R.id.fault_selfcheck);
-        selfcheckList.setAdapter(selfcheckListAdapter);
+        selfCheckList = (ListView) view.findViewById(R.id.fault_selfcheck);
+        selfCheckList.setAdapter(selfCheckListAdapter);
 
         detectedListAdapter = new ArrayAdapter<String>(getActivity(), 0, 0, detected) {
             @Override
@@ -238,74 +228,74 @@ public class FaultFragment extends Fragment {
         enabled &= connectionFragment.canSendCommand();
         clearButton.setEnabled(enabled);
 
-        selfcheckStatus = 0;
-        selfcheck.clear();
-        selfcheckListAdapter.clear();
+        selfCheckStatus = 0;
+        selfCheck.clear();
+        selfCheckListAdapter.clear();
         if (enabled && connectionFragment.pid().contains("01")) {
             connectionFragment.sendCommand(new BluetoothRunnable.Transaction("01 01 1") {
                 @Override
                 protected void success(String response) {
-                    selfcheckStatus = (int) Long.parseLong(response.substring(4), 16);
+                    selfCheckStatus = (int) Long.parseLong(response.substring(4), 16);
 
-                    selfcheck.add(SelfcheckTypes.MIL);
-                    selfcheck.add(SelfcheckTypes.FAULT_CODES);
-                    if ((selfcheckStatus & 0x100000) != 0) {
-                        selfcheck.add(SelfcheckTypes.MISFIRE);
+                    selfCheck.add(SelfCheckTypes.MIL);
+                    selfCheck.add(SelfCheckTypes.FAULT_CODES);
+                    if ((selfCheckStatus & 0x100000) != 0) {
+                        selfCheck.add(SelfCheckTypes.MISFIRE);
                     }
-                    if ((selfcheckStatus & 0x200000) != 0) {
-                        selfcheck.add(SelfcheckTypes.FUEL_SYSTEM);
+                    if ((selfCheckStatus & 0x200000) != 0) {
+                        selfCheck.add(SelfCheckTypes.FUEL_SYSTEM);
                     }
-                    if ((selfcheckStatus & 0x400000) != 0) {
-                        selfcheck.add(SelfcheckTypes.COMPONENTS);
+                    if ((selfCheckStatus & 0x400000) != 0) {
+                        selfCheck.add(SelfCheckTypes.COMPONENTS);
                     }
-                    boolean compression = (selfcheckStatus & 0x800000) != 0;
+                    boolean compression = (selfCheckStatus & 0x800000) != 0;
                     if (compression) {
-                        if ((selfcheckStatus & 0x0100) != 0) {
-                            selfcheck.add(SelfcheckTypes.CATALYST);
+                        if ((selfCheckStatus & 0x0100) != 0) {
+                            selfCheck.add(SelfCheckTypes.CATALYST);
                         }
-                        if ((selfcheckStatus & 0x0200) != 0) {
-                            selfcheck.add(SelfcheckTypes.HEATED_CATALYST);
+                        if ((selfCheckStatus & 0x0200) != 0) {
+                            selfCheck.add(SelfCheckTypes.HEATED_CATALYST);
                         }
-                        if ((selfcheckStatus & 0x0400) != 0) {
-                            selfcheck.add(SelfcheckTypes.EVAPORATIVE_SYSTEM);
+                        if ((selfCheckStatus & 0x0400) != 0) {
+                            selfCheck.add(SelfCheckTypes.EVAPORATIVE_SYSTEM);
                         }
-                        if ((selfcheckStatus & 0x0800) != 0) {
-                            selfcheck.add(SelfcheckTypes.SECONDARY_AIR_SYSTEM);
+                        if ((selfCheckStatus & 0x0800) != 0) {
+                            selfCheck.add(SelfCheckTypes.SECONDARY_AIR_SYSTEM);
                         }
-                        if ((selfcheckStatus & 0x1000) != 0) {
-                            selfcheck.add(SelfcheckTypes.AC_REFRIDGERANT);
+                        if ((selfCheckStatus & 0x1000) != 0) {
+                            selfCheck.add(SelfCheckTypes.AC_REFRIDGERANT);
                         }
-                        if ((selfcheckStatus & 0x2000) != 0) {
-                            selfcheck.add(SelfcheckTypes.OXYGEN_SENSOR);
+                        if ((selfCheckStatus & 0x2000) != 0) {
+                            selfCheck.add(SelfCheckTypes.OXYGEN_SENSOR);
                         }
-                        if ((selfcheckStatus & 0x4000) != 0) {
-                            selfcheck.add(SelfcheckTypes.OXYGEN_SENSOR_HEATER);
+                        if ((selfCheckStatus & 0x4000) != 0) {
+                            selfCheck.add(SelfCheckTypes.OXYGEN_SENSOR_HEATER);
                         }
-                        if ((selfcheckStatus & 0x8000) != 0) {
-                            selfcheck.add(SelfcheckTypes.EGR_SYSTEM);
+                        if ((selfCheckStatus & 0x8000) != 0) {
+                            selfCheck.add(SelfCheckTypes.EGR_SYSTEM);
                         }
                     } else {
-                        if ((selfcheckStatus & 0x0100) != 0) {
-                            selfcheck.add(SelfcheckTypes.NMHC_CATALYST);
+                        if ((selfCheckStatus & 0x0100) != 0) {
+                            selfCheck.add(SelfCheckTypes.NMHC_CATALYST);
                         }
-                        if ((selfcheckStatus & 0x0200) != 0) {
-                            selfcheck.add(SelfcheckTypes.NOx_SCR_MONITOR);
+                        if ((selfCheckStatus & 0x0200) != 0) {
+                            selfCheck.add(SelfCheckTypes.NOx_SCR_MONITOR);
                         }
-                        if ((selfcheckStatus & 0x0800) != 0) {
-                            selfcheck.add(SelfcheckTypes.BOOST_PRESSURE);
+                        if ((selfCheckStatus & 0x0800) != 0) {
+                            selfCheck.add(SelfCheckTypes.BOOST_PRESSURE);
                         }
-                        if ((selfcheckStatus & 0x2000) != 0) {
-                            selfcheck.add(SelfcheckTypes.EXHAUST_GAS_SENSOR);
+                        if ((selfCheckStatus & 0x2000) != 0) {
+                            selfCheck.add(SelfCheckTypes.EXHAUST_GAS_SENSOR);
                         }
-                        if ((selfcheckStatus & 0x4000) != 0) {
-                            selfcheck.add(SelfcheckTypes.PM_FILTER_MONITORING);
+                        if ((selfCheckStatus & 0x4000) != 0) {
+                            selfCheck.add(SelfCheckTypes.PM_FILTER_MONITORING);
                         }
-                        if ((selfcheckStatus & 0x8000) != 0) {
-                            selfcheck.add(SelfcheckTypes.EGR_VVT_SYSTEM);
+                        if ((selfCheckStatus & 0x8000) != 0) {
+                            selfCheck.add(SelfCheckTypes.EGR_VVT_SYSTEM);
                         }
                     }
 
-                    selfcheckListAdapter.notifyDataSetChanged();
+                    selfCheckListAdapter.notifyDataSetChanged();
                 }
             });
         }
@@ -317,7 +307,7 @@ public class FaultFragment extends Fragment {
                 @Override
                 protected void success(String response) {
                     detected.clear();
-                    for (int i = 0; i < (selfcheckStatus & 0x7f000000) >> 24; i += 1) {
+                    for (int i = 0; i < (selfCheckStatus & 0x7f000000) >> 24; i += 1) {
                         int begin = 2 + i * 4;
                         int code = Integer.valueOf(response.substring(begin, begin + 4), 16);
                         String decoded = String.format("%s%04x",
