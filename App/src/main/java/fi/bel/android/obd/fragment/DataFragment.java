@@ -71,7 +71,7 @@ public class DataFragment extends Fragment {
                     convertView = getActivity().getLayoutInflater().inflate(R.layout.fragment_data_item, null);
                 }
                 String pidKey = data.get(position);
-                float pidValue = dataMap.get(position);
+                float pidValue = dataMap.get(pidKey);
 
                 TextView key = (TextView) convertView.findViewById(R.id.data_item_key);
                 key.setText(pidKey);
@@ -104,7 +104,7 @@ public class DataFragment extends Fragment {
     protected void refresh() {
         data.clear();
         for (int i = 0; i < 256; i ++) {
-            String pid = String.format("%02d", i);
+            String pid = String.format("%02x", i);
             if (! connectionFragment.pidSupported(pid)) {
                 continue;
             }
@@ -117,6 +117,7 @@ public class DataFragment extends Fragment {
             }
             cursor.close();
         }
+
         dataListAdapter.notifyDataSetChanged();
     }
 }

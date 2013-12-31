@@ -82,10 +82,10 @@ public class OBD {
             case "0a":
             case "0b":
                 return "kPa";
-            case "0d":
-                return "km/h";
             case "0c":
                 return "rpm";
+            case "0d":
+                return "km/h";
             case "0e":
                 return "deg";
             case "10":
