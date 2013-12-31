@@ -101,7 +101,7 @@ public class FaultFragment extends Fragment {
                 TextView state = (TextView) convertView.findViewById(R.id.fault_item_state);
                 switch (selfcheckType) {
                     case MIL:
-                        state.setText((selfcheckStatus & 0x8000000) != 0 ? "On" : "Off");
+                        state.setText((selfcheckStatus & 0x80000000) != 0 ? "On" : "Off");
                         break;
 
                     case FAULT_CODES:
@@ -307,14 +307,14 @@ public class FaultFragment extends Fragment {
 
         detected.clear();
         detectedListAdapter.notifyDataSetChanged();
-        if (enabled && connectionFragment.pidSupported("03")) {
-            connectionFragment.sendCommand(new BluetoothRunnable.Transaction("01 03") {
+        if (enabled) {
+            connectionFragment.sendCommand(new BluetoothRunnable.Transaction("03") {
                 @Override
                 protected void success(String response) {
                     detected.clear();
-                    for (int i = 0; i < (selfcheckStatus & 0x7f000000) >> 24; i ++) {
-                        int begin = 4 + i * 2;
-                        int code = Integer.valueOf(response.substring(begin, begin + 2), 16);
+                    for (int i = 0; i < (selfcheckStatus & 0x7f000000) >> 24; i += 1) {
+                        int begin = 2 + i * 4;
+                        int code = Integer.valueOf(response.substring(begin, begin + 4), 16);
                         String decoded = String.format("%s%04x",
                                 String.valueOf("PCBU".charAt(code >> 14)),
                                 code & 0x3fff

@@ -5,11 +5,14 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQuery;
 import android.database.sqlite.SQLiteStatement;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.util.Log;
 
 import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
@@ -49,21 +52,17 @@ public class DataService extends Service {
 
     protected Handler handler;
 
-    protected boolean running;
-
     protected final Runnable collect = new Runnable() {
         @Override
         public void run() {
-            if (running) {
-                collect();
+            collect();
 
-                nextCollectTime += COLLECT_INTERVAL_MS;
-                long sleepTime = nextCollectTime - System.currentTimeMillis();
-                if (sleepTime < 0) {
-                    sleepTime = 0;
-                }
-                handler.postDelayed(this, sleepTime);
+            nextCollectTime += COLLECT_INTERVAL_MS;
+            long sleepTime = nextCollectTime - System.currentTimeMillis();
+            if (sleepTime < 0) {
+                sleepTime = 0;
             }
+            handler.postDelayed(this, sleepTime);
         }
     };
 
@@ -75,21 +74,19 @@ public class DataService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.i(TAG, "Starting BG service");
 
-        Notification notification = new Notification();
-        notification.flags |= Notification.FLAG_FOREGROUND_SERVICE;
-        notification.icon = R.drawable.ic_launcher;
-        notification.contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, ContainerActivity.class), 0);
-        notification.tickerText = "Active connection to BT device";
-        startForeground(1, notification);
+        Notification.Builder notification = new Notification.Builder(this);
+        notification.setSmallIcon(R.drawable.ic_launcher);
+        notification.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, ContainerActivity.class), 0));
+        notification.setContentTitle("Active connection to BT device");
+        startForeground(1, notification.build());
 
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        wakelock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, null);
+        wakelock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Sensor Data Collection Over BT");
         wakelock.acquire();
 
         db = openDatabase(this);
-        idStatement = db.compileStatement("SELECT max(rowid) FROM data WHERE pid = ?");
-        valueStatement = db.compileStatement("SELECT value FROM data WHERE rowid = ?");
         insertStatement = db.compileStatement("INSERT INTO data (timestamp, pid, value) VALUES (?, ?, ?)");
 
         connectionFragment = (ConnectionFragment) ContainerActivity.FRAGMENTS.get(0);
@@ -102,6 +99,8 @@ public class DataService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.i(TAG, "Stopping service");
+
         handler.removeCallbacks(collect);
         db.close();
         wakelock.release();
@@ -111,21 +110,25 @@ public class DataService extends Service {
         for (int i = 1; i < 0x100; i += 1) {
             final String pid = String.format("%02x", i);
             if (connectionFragment.pidSupported(pid) && OBD.unit(pid) != null) {
-                String cmd = String.format("%02x %02x %d", 1, pid, 1);
+                String cmd = String.format("%02x %s %d", 1, pid, 1);
                 connectionFragment.sendCommand(new BluetoothRunnable.Transaction(cmd) {
                     @Override
                     protected void success(String response) {
                         float newValue = OBD.convert(pid, response);
-                        idStatement.bindString(1, pid);
-                        long rowid = idStatement.simpleQueryForLong();
-                        valueStatement.bindLong(1, rowid);
-                        float dbValue = Float.parseFloat(valueStatement.simpleQueryForString());
-                        if (dbValue != newValue) {
-                            insertStatement.bindLong(1, System.currentTimeMillis());
-                            insertStatement.bindString(2, pid);
-                            insertStatement.bindDouble(3, newValue);
-                            insertStatement.executeInsert();
+
+                        Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });
+                        if (cursor.moveToFirst()) {
+                            float dbValue = cursor.getFloat(0);
+                            if (dbValue == newValue) {
+                                return;
+                            }
                         }
+                        cursor.close();
+
+                        insertStatement.bindLong(1, System.currentTimeMillis());
+                        insertStatement.bindString(2, pid);
+                        insertStatement.bindDouble(3, newValue);
+                        insertStatement.executeInsert();
                     }
                 });
             }

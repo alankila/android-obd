@@ -1,6 +1,7 @@
 package fi.bel.android.obd.fragment;
 
 import android.app.Fragment;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.os.Bundle;
@@ -32,10 +33,6 @@ public class DataFragment extends Fragment {
     protected static final String TAG = DataFragment.class.getSimpleName();
 
     protected SQLiteDatabase db;
-
-    protected SQLiteStatement idStatement;
-
-    protected SQLiteStatement valueStatement;
 
     protected ConnectionFragment connectionFragment;
 
@@ -94,8 +91,6 @@ public class DataFragment extends Fragment {
     public void onResume() {
         super.onResume();
         db = DataService.openDatabase(getActivity());
-        idStatement = db.compileStatement("SELECT max(rowid) FROM data WHERE pid = ?");
-        valueStatement = db.compileStatement("SELECT value FROM data WHERE rowid = ?");
         handler.post(refresh);
     }
 
@@ -110,14 +105,17 @@ public class DataFragment extends Fragment {
         data.clear();
         for (int i = 0; i < 256; i ++) {
             String pid = String.format("%02d", i);
-            if (connectionFragment.pidSupported(pid)) {
-                data.add(pid);
-                idStatement.bindString(1, pid);
-                long rowid = idStatement.simpleQueryForLong();
-                valueStatement.bindLong(1, rowid);
-                float value = Float.parseFloat(valueStatement.simpleQueryForString());
-                dataMap.put(pid, value);
+            if (! connectionFragment.pidSupported(pid)) {
+                continue;
             }
+
+            Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });
+            if (cursor.moveToFirst()) {
+                float dbValue = cursor.getFloat(0);
+                data.add(pid);
+                dataMap.put(pid, dbValue);
+            }
+            cursor.close();
         }
         dataListAdapter.notifyDataSetChanged();
     }
