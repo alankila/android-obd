@@ -35,8 +35,6 @@ public class DataFragment extends Fragment {
 
     protected SQLiteDatabase db;
 
-    protected ConnectionFragment connectionFragment;
-
     protected Handler handler;
 
     protected final Runnable refresh = new Runnable() {
@@ -58,7 +56,6 @@ public class DataFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        connectionFragment = (ConnectionFragment) ContainerActivity.FRAGMENTS.get(0);
         handler = new Handler();
     }
 
@@ -109,7 +106,7 @@ public class DataFragment extends Fragment {
 
     protected void refresh() {
         data.clear();
-        for (String pid : connectionFragment.pid()) {
+        for (String pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
             Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });
             if (cursor.moveToFirst()) {
                 float dbValue = cursor.getFloat(0);

@@ -1,0 +1,19 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="horizontal">
+
+    <TextView android:id="@+id/dtc_short"
+        android:layout_width="60sp"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
+        android:text="P1234"/>
+    <TextView android:id="@+id/dtc_long"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
+        android:text="This is a very long multiline text item as a sample"/>
+
+</LinearLayout>

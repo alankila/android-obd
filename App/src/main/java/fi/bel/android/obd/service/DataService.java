@@ -21,12 +21,12 @@ import fi.bel.android.obd.thread.BluetoothRunnable;
 import fi.bel.android.obd.util.OBD;
 
 /**
- * Created by alankila on 30.12.2013.
+ * Background service that collects data when connection to BT device has been established.
  */
 public class DataService extends Service {
     protected static final String TAG = DataService.class.getSimpleName();
 
-    protected static final int COLLECT_INTERVAL_MS = 10000;
+    protected static final int COLLECT_INTERVAL_MS = 5000;
 
     public static SQLiteDatabase openDatabase(Context context) {
         context.getDatabasePath(".").getParentFile().mkdirs();
@@ -40,13 +40,7 @@ public class DataService extends Service {
 
     protected SQLiteDatabase db;
 
-    protected SQLiteStatement idStatement;
-
-    protected SQLiteStatement valueStatement;
-
     protected SQLiteStatement insertStatement;
-
-    protected ConnectionFragment connectionFragment;
 
     protected long nextCollectTime;
 
@@ -89,7 +83,6 @@ public class DataService extends Service {
         db = openDatabase(this);
         insertStatement = db.compileStatement("INSERT INTO data (timestamp, pid, value) VALUES (?, ?, ?)");
 
-        connectionFragment = (ConnectionFragment) ContainerActivity.FRAGMENTS.get(0);
         handler = new Handler();
 
         nextCollectTime = System.currentTimeMillis();
@@ -107,9 +100,9 @@ public class DataService extends Service {
     }
 
     private void collect() {
-        for (final String pid : connectionFragment.pid()) {
+        for (final String pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
             String cmd = String.format("%02x %s %d", 1, pid, 1);
-            connectionFragment.sendCommand(new BluetoothRunnable.Transaction(cmd) {
+            ContainerActivity.BLUETOOTH_RUNNABLE.addTransaction(new BluetoothRunnable.Transaction(cmd) {
                 @Override
                 protected void success(String response) {
                     float newValue = OBD.convert(pid, response);

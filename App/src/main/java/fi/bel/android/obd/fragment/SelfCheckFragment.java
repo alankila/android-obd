@@ -19,8 +19,8 @@ import fi.bel.android.obd.R;
 import fi.bel.android.obd.thread.BluetoothRunnable;
 import fi.bel.android.obd.util.OBD;
 
-public class FaultFragment extends Fragment {
-    protected static final String TAG = FaultFragment.class.getSimpleName();
+public class SelfCheckFragment extends Fragment {
+    protected static final String TAG = SelfCheckFragment.class.getSimpleName();
 
     protected enum SelfCheckTypes {
         MIL,                    /* A7 */
@@ -50,8 +50,6 @@ public class FaultFragment extends Fragment {
         EGR_VVT_SYSTEM          /* C7/D7 */
     }
 
-    protected ConnectionFragment connectionFragment;
-
     protected List<SelfCheckTypes> selfCheck = new ArrayList<>();
 
     protected ArrayAdapter<SelfCheckTypes> selfCheckListAdapter;
@@ -67,12 +65,6 @@ public class FaultFragment extends Fragment {
     protected Button clearButton;
 
     protected int selfCheckStatus;
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        connectionFragment = (ConnectionFragment) ContainerActivity.FRAGMENTS.get(0);
-    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -205,7 +197,7 @@ public class FaultFragment extends Fragment {
         clearButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                connectionFragment.sendCommand(new BluetoothRunnable.Transaction("04") {
+                ContainerActivity.BLUETOOTH_RUNNABLE.addTransaction(new BluetoothRunnable.Transaction("04") {
                     @Override
                     protected void success(String response) {
                         refresh();
@@ -225,14 +217,14 @@ public class FaultFragment extends Fragment {
 
     protected void refresh() {
         boolean enabled = true;
-        enabled &= connectionFragment.canSendCommand();
+        enabled &= ContainerActivity.BLUETOOTH_RUNNABLE.getPhase() == BluetoothRunnable.Phase.READY;
         clearButton.setEnabled(enabled);
 
         selfCheckStatus = 0;
         selfCheck.clear();
         selfCheckListAdapter.clear();
-        if (enabled && connectionFragment.pid().contains("01")) {
-            connectionFragment.sendCommand(new BluetoothRunnable.Transaction("01 01 1") {
+        if (enabled && ContainerActivity.BLUETOOTH_RUNNABLE.pid().contains("01")) {
+            ContainerActivity.BLUETOOTH_RUNNABLE.addTransaction(new BluetoothRunnable.Transaction("01 01 1") {
                 @Override
                 protected void success(String response) {
                     selfCheckStatus = (int) Long.parseLong(response.substring(4), 16);
@@ -303,7 +295,7 @@ public class FaultFragment extends Fragment {
         detected.clear();
         detectedListAdapter.notifyDataSetChanged();
         if (enabled) {
-            connectionFragment.sendCommand(new BluetoothRunnable.Transaction("03") {
+            ContainerActivity.BLUETOOTH_RUNNABLE.addTransaction(new BluetoothRunnable.Transaction("03") {
                 @Override
                 protected void success(String response) {
                     detected.clear();

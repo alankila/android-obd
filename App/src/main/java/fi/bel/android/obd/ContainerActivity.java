@@ -3,31 +3,32 @@ package fi.bel.android.obd;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
-import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import fi.bel.android.obd.fragment.ConnectionFragment;
-import fi.bel.android.obd.fragment.DTCFragment;
+import fi.bel.android.obd.fragment.DTCSearchFragment;
+import fi.bel.android.obd.fragment.SelfCheckFragment;
 import fi.bel.android.obd.fragment.DataFragment;
-import fi.bel.android.obd.fragment.FaultFragment;
+import fi.bel.android.obd.thread.BluetoothRunnable;
 
 public class ContainerActivity extends Activity implements ScreenListFragment.Callbacks {
-    public static final List<Fragment> FRAGMENTS = new ArrayList<>();
+    protected static final List<Fragment> FRAGMENTS = new ArrayList<>();
     static {
         FRAGMENTS.add(new ConnectionFragment());
-        FRAGMENTS.add(new FaultFragment());
-        FRAGMENTS.add(new DTCFragment());
+        FRAGMENTS.add(new SelfCheckFragment());
+        FRAGMENTS.add(new DTCSearchFragment());
         FRAGMENTS.add(new DataFragment());
         for (Fragment f : FRAGMENTS) {
             f.setRetainInstance(true);
         }
     }
 
-    public static Context APPLICATION_CONTEXT;
+    /** Globally accessible Bluetooth connection */
+    public static BluetoothRunnable BLUETOOTH_RUNNABLE;
 
     private boolean mTwoPane;
 
@@ -38,7 +39,7 @@ public class ContainerActivity extends Activity implements ScreenListFragment.Ca
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_screen_list);
 
-        APPLICATION_CONTEXT = getApplicationContext();
+        BLUETOOTH_RUNNABLE = new BluetoothRunnable(new Handler(), getApplicationContext());
 
         getFragmentManager()
                 .beginTransaction()

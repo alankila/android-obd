@@ -4,7 +4,10 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
@@ -29,12 +32,15 @@ import fi.bel.android.obd.service.DataService;
 import fi.bel.android.obd.thread.BluetoothRunnable;
 
 public class ConnectionFragment extends Fragment
-        implements AdapterView.OnItemClickListener, View.OnClickListener, BluetoothRunnable.Callback {
-    public static final String ACTION_PHASE = "fi.bel.android.obd.PHASE";
-
-    public static final String EXTRA_PHASE = "fi.bel.android.obd.PHASE";
-
+        implements AdapterView.OnItemClickListener, View.OnClickListener {
     protected static final String TAG = ConnectionFragment.class.getSimpleName();
+
+    protected final BroadcastReceiver phaseReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            updateUiState();
+        }
+    };
 
     protected List<BluetoothDevice> devices = new ArrayList<>();
 
@@ -46,19 +52,7 @@ public class ConnectionFragment extends Fragment
 
     protected ArrayAdapter<BluetoothDevice> deviceListAdapter;
 
-    protected BluetoothRunnable bluetoothRunnable;
-
     protected Thread bluetoothThread;
-
-    protected BluetoothDevice currentDevice;
-
-    protected BluetoothRunnable.Phase phase;
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        phase = BluetoothRunnable.Phase.DISCONNECTED;
-    }
 
     @Override
     public void onAttach(Activity activity) {
@@ -74,7 +68,7 @@ public class ConnectionFragment extends Fragment
                 tv1.setText(device.getName());
                 TextView tv2 = (TextView) convertView.findViewById(android.R.id.text2);
                 tv2.setText(device.getAddress());
-                convertView.setActivated(device.equals(currentDevice));
+                convertView.setActivated(device.equals(ContainerActivity.BLUETOOTH_RUNNABLE.getDevice()));
                 return convertView;
             }
         };
@@ -122,6 +116,13 @@ public class ConnectionFragment extends Fragment
         });
         deviceListAdapter.notifyDataSetChanged();
         updateUiState();
+        getActivity().getApplicationContext().registerReceiver(phaseReceiver, new IntentFilter(BluetoothRunnable.ACTION_PHASE));
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        getActivity().getApplicationContext().unregisterReceiver(phaseReceiver);
     }
 
     /**
@@ -134,11 +135,10 @@ public class ConnectionFragment extends Fragment
      */
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        currentDevice = devices.get(position);
+        ContainerActivity.BLUETOOTH_RUNNABLE.setDevice(devices.get(position));
         deviceListAdapter.notifyDataSetChanged();
 
-        bluetoothRunnable = new BluetoothRunnable(currentDevice, new Handler(), this);
-        bluetoothThread = new Thread(bluetoothRunnable);
+        bluetoothThread = new Thread(ContainerActivity.BLUETOOTH_RUNNABLE);
         bluetoothThread.start();
     }
 
@@ -164,59 +164,19 @@ public class ConnectionFragment extends Fragment
      * Update the UI state to reflect current state of the BT system.
      */
     private void updateUiState() {
-        deviceList.setEnabled(phase == BluetoothRunnable.Phase.DISCONNECTED);
+        deviceList.setEnabled(ContainerActivity.BLUETOOTH_RUNNABLE.getPhase() == BluetoothRunnable.Phase.DISCONNECTED);
         if (deviceList.isEnabled()) {
-            currentDevice = null;
-            bluetoothRunnable = null;
+            ContainerActivity.BLUETOOTH_RUNNABLE.setDevice(null);
             bluetoothThread = null;
             deviceListAdapter.notifyDataSetChanged();
         }
-        disconnectButton.setEnabled(phase != BluetoothRunnable.Phase.DISCONNECTED);
-        phaseText.setText(phase.toString());
-
-        ContainerActivity.APPLICATION_CONTEXT.sendBroadcast(new Intent(ACTION_PHASE).putExtra(EXTRA_PHASE, phase));
-    }
-
-    /**
-     * Is application ready to interact with reader?
-     *
-     * @return
-     */
-    public boolean canSendCommand() {
-        return phase == BluetoothRunnable.Phase.READY;
-    }
-
-    /**
-     * Add transaction into the queue.
-     *
-     * @param transaction
-     */
-    public void sendCommand(BluetoothRunnable.Transaction transaction) {
-        bluetoothRunnable.addTransaction(transaction);
-    }
-
-    /**
-     * Return the set of known PIDs
-     */
-    public Set<String> pid() {
-        return bluetoothRunnable != null ? bluetoothRunnable.pid() : Collections.<String>emptySet();
-    }
-
-    /**
-     * Set current operational phase.
-     *
-     * @param phase
-     */
-    @Override
-    public void setPhase(BluetoothRunnable.Phase phase) {
-        /* Start/Stop dataservice depending on connection phase. */
-        if (this.phase != BluetoothRunnable.Phase.READY && phase == BluetoothRunnable.Phase.READY) {
-            ContainerActivity.APPLICATION_CONTEXT.startService(new Intent(ContainerActivity.APPLICATION_CONTEXT, DataService.class));
+        disconnectButton.setEnabled(ContainerActivity.BLUETOOTH_RUNNABLE.getPhase() != BluetoothRunnable.Phase.DISCONNECTED);
+        try {
+            String phase = String.valueOf(ContainerActivity.BLUETOOTH_RUNNABLE.getPhase());
+            phaseText.setText((int) R.string.class.getField(phase).get(null));
         }
-        if (this.phase == BluetoothRunnable.Phase.READY && phase != BluetoothRunnable.Phase.READY) {
-            ContainerActivity.APPLICATION_CONTEXT.stopService(new Intent(ContainerActivity.APPLICATION_CONTEXT, DataService.class));
+        catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        this.phase = phase;
-        updateUiState();
     }
 }

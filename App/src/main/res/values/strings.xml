@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Android OBD Tool</string>
-    <string name="connection_fragment">Connection</string>
+    <string name="ConnectionFragment">Connection</string>
+    <string name="SelfCheckFragment">Self-check and faults</string>
+    <string name="DTCSearchFragment">Diagnostic Trouble Code (DTC) search</string>
+    <string name="DataFragment">Live sensor data</string>
+    <string name="GraphFragment">Graphed sensor data</string>
+
+    <string name="DISCONNECTED">Disconnected</string>
+    <string name="CONNECTING">Connecting...</string>
+    <string name="INITIALIZING">Initializing...</string>
+    <string name="READY">Ready!</string>
 
     <string name="connection_no_bluetooth">Please enable Bluetooth first!</string>
     <string name="connection_device_list">Select BT device</string>

@@ -2,6 +2,8 @@ package fi.bel.android.obd.thread;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Handler;
 import android.util.Log;
 
@@ -17,6 +19,9 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
+
+import fi.bel.android.obd.ContainerActivity;
+import fi.bel.android.obd.service.DataService;
 
 /**
  * This class implements a simple command-response protocol over the bluetooth
@@ -52,9 +57,9 @@ public class BluetoothRunnable implements Runnable {
         DISCONNECTED, CONNECTING, INITIALIZING, READY
     }
 
-    public interface Callback {
-        public void setPhase(Phase phase);
-    }
+    public static final String ACTION_PHASE = "fi.bel.android.obd.PHASE";
+
+    public static final String EXTRA_PHASE = "fi.bel.android.obd.PHASE";
 
     protected static final String TAG = BluetoothRunnable.class.getSimpleName();
 
@@ -63,27 +68,22 @@ public class BluetoothRunnable implements Runnable {
     /** Well-known serial SPP */
     protected static final UUID SPP = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
-    private final BluetoothDevice device;
+    private BluetoothDevice device;
 
     private final Handler handler;
 
-    private final Callback callback;
-
-    private final Selector selector;
+    private final Context context;
 
     private final BlockingQueue<Transaction> queue = new ArrayBlockingQueue<>(10);
 
-    private final Set<String> supportedPid = new ConcurrentSkipListSet<>();
+    private final Set<String> supportedPid = new TreeSet<>();
 
-    public BluetoothRunnable(BluetoothDevice device, Handler handler, Callback callback) {
-        this.device = device;
+    protected Phase phase = null;
+
+    public BluetoothRunnable(Handler handler, Context context) {
         this.handler = handler;
-        this.callback = callback;
-        try {
-            this.selector = Selector.open();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        this.context = context;
+        setPhase(Phase.DISCONNECTED);
     }
 
     @Override
@@ -91,7 +91,7 @@ public class BluetoothRunnable implements Runnable {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                callback.setPhase(Phase.CONNECTING);
+               setPhase(Phase.CONNECTING);
             }
         });
 
@@ -104,11 +104,14 @@ public class BluetoothRunnable implements Runnable {
         checkPid(0);
 
         connectAndRun();
+        if (phase == Phase.READY) {
+            context.stopService(new Intent(context, DataService.class));
+        }
 
         handler.post(new Runnable() {
             @Override
             public void run() {
-                callback.setPhase(Phase.DISCONNECTED);
+                setPhase(Phase.DISCONNECTED);
             }
         });
     }
@@ -130,7 +133,7 @@ public class BluetoothRunnable implements Runnable {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                callback.setPhase(Phase.INITIALIZING);
+                setPhase(Phase.INITIALIZING);
             }
         });
 
@@ -219,6 +222,8 @@ public class BluetoothRunnable implements Runnable {
                     if ((data & (1 << (31 - j))) != 0) {
                         int pid = i + j + 1;
                         String s = String.format("%02x", pid);
+                        /* These return multi-byte result with different meaning per byte.
+                         * This is also how we will handle bitfield results one day. */
                         if (pid >= 0x14 && pid <= 0x1b) {
                             supportedPid.add(s + "_1");
                             supportedPid.add(s + "_2");
@@ -231,9 +236,46 @@ public class BluetoothRunnable implements Runnable {
                 if (i != 0xe0 && supportedPid.contains(String.format("%02x", i + 32))) {
                     checkPid(i + 32);
                 } else {
-                    callback.setPhase(Phase.READY);
+                    setPhase(Phase.READY);
                 }
             }
         });
+    }
+
+    public BluetoothDevice getDevice() {
+        return device;
+    }
+
+    public void setDevice(BluetoothDevice device) {
+        this.device = device;
+    }
+
+    /**
+     * Get the current phase
+     */
+    public Phase getPhase() {
+        return phase;
+    }
+
+    /**
+     * Change phase. We detect when we enter READY state and leave it, and control the DataService
+     * while at it.
+     *
+     * @param phase
+     */
+    protected void setPhase(BluetoothRunnable.Phase phase) {
+        if (Thread.currentThread() != handler.getLooper().getThread()) {
+            throw new RuntimeException("Invoked in wrong thread");
+        }
+
+        /* Start/Stop dataservice depending on connection phase. */
+        if (this.phase != BluetoothRunnable.Phase.READY && phase == BluetoothRunnable.Phase.READY) {
+            context.startService(new Intent(context, DataService.class));
+        }
+        if (this.phase == BluetoothRunnable.Phase.READY && phase != BluetoothRunnable.Phase.READY) {
+            context.stopService(new Intent(context, DataService.class));
+        }
+        context.sendBroadcast(new Intent(ACTION_PHASE).putExtra(EXTRA_PHASE, phase));
+        this.phase = phase;
     }
 }

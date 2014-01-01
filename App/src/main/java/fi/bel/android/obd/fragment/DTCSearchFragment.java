@@ -14,20 +14,22 @@ import android.widget.SearchView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
 import fi.bel.android.obd.thread.BluetoothRunnable;
 import fi.bel.android.obd.util.OBD;
 
-public class DTCFragment extends Fragment {
+public class DTCSearchFragment extends Fragment {
     protected SearchView search;
 
-    protected List<String> fault = new ArrayList<>();
+    protected List<String[]> fault = new ArrayList<>();
 
-    protected ArrayAdapter<String> faultListAdapter;
+    protected ArrayAdapter<String[]> faultListAdapter;
 
     protected ListView faultList;
 
@@ -48,20 +50,41 @@ public class DTCFragment extends Fragment {
             }
 
         });
-        faultListAdapter = new ArrayAdapter<String>(getActivity(), 0, 0, fault) {
+        faultListAdapter = new ArrayAdapter<String[]>(getActivity(), 0, 0, fault) {
+            @Override
+            public int getViewTypeCount() {
+                return 2;
+            }
+
+            @Override
+            public int getItemViewType(int position) {
+                return getItem(position)[0] == null ? 0 : 1;
+            }
+
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
+                boolean isHeader = getItemViewType(position) == 0;
                 if (convertView == null) {
-                    convertView = getActivity().getLayoutInflater().inflate(android.R.layout.simple_list_item_1, null);
+                    convertView = getActivity().getLayoutInflater().inflate(
+                            isHeader ? R.layout.fragment_dtc_header : R.layout.fragment_dtc_item, null
+                    );
                 }
-                TextView tv1 = (TextView) convertView.findViewById(android.R.id.text1);
-                tv1.setText(fault.get(position));
+                String[] text = getItem(position);
+
+                if (! isHeader) {
+                    TextView shortView = (TextView) convertView.findViewById(R.id.dtc_short);
+                    shortView.setText(text[0]);
+                }
+
+                TextView longView = (TextView) convertView.findViewById(R.id.dtc_long);
+                longView.setText(text[1]);
                 return convertView;
             }
         };
 
         faultList = (ListView) view.findViewById(R.id.dtc_list);
         faultList.setAdapter(faultListAdapter);
+        faultList.setFastScrollEnabled(true);
         refresh();
         return view;
     }
@@ -72,16 +95,16 @@ public class DTCFragment extends Fragment {
         Map<String, String> faultMap = OBD.getFaultMap(getActivity());
 
         fault.clear();
-        for (String s1 : faultHeaderMap.keySet()) {
+        for (String header : faultHeaderMap.keySet()) {
             boolean s1Added = false;
-            for (String s2 : faultHeaderMap.get(s1)) {
-                String v2 = faultMap.get(s2);
-                if (s2.toLowerCase().contains(keywords) || v2.toLowerCase().contains(keywords)) {
+            for (String code : faultHeaderMap.get(header)) {
+                String description = faultMap.get(code);
+                if (code.toLowerCase().contains(keywords) || description.toLowerCase().contains(keywords)) {
                     if (! s1Added) {
-                        fault.add(s1);
+                        fault.add(new String[] { null, header });
                         s1Added = true;
                     }
-                    fault.add(s2 + " " + v2);
+                    fault.add(new String[] { code, description });
                 }
             }
         }

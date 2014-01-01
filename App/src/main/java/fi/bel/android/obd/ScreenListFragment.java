@@ -32,7 +32,13 @@ public class ScreenListFragment extends ListFragment {
                     convertView = getActivity().getLayoutInflater().inflate(android.R.layout.simple_list_item_activated_1, null);
                 }
                 TextView tv1 = (TextView) convertView.findViewById(android.R.id.text1);
-                tv1.setText(getItem(position).getClass().getSimpleName().replace("Fragment", ""));
+                String className = getItem(position).getClass().getSimpleName();
+                try {
+                    tv1.setText((int) R.string.class.getField(className).get(null));
+                }
+                catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
                 return convertView;
             }
         });
