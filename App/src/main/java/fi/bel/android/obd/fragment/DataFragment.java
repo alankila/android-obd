@@ -1,6 +1,10 @@
 package fi.bel.android.obd.fragment;
 
 import android.app.Fragment;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
@@ -35,16 +39,6 @@ public class DataFragment extends Fragment {
 
     protected SQLiteDatabase db;
 
-    protected Handler handler;
-
-    protected final Runnable refresh = new Runnable() {
-        @Override
-        public void run() {
-            refresh();
-            handler.postDelayed(this, 5000);
-        }
-    };
-
     protected List<String> data = new ArrayList<>();
 
     protected Map<String, Float> dataMap = new HashMap<>();
@@ -53,11 +47,22 @@ public class DataFragment extends Fragment {
 
     protected ArrayAdapter dataListAdapter;
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        handler = new Handler();
-    }
+    protected final BroadcastReceiver newData = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            data.clear();
+            for (String pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
+                Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });
+                if (cursor.moveToFirst()) {
+                    float dbValue = cursor.getFloat(0);
+                    data.add(pid);
+                    dataMap.put(pid, dbValue);
+                }
+                cursor.close();
+            }
+            dataListAdapter.notifyDataSetChanged();
+        }
+    };
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -94,28 +99,13 @@ public class DataFragment extends Fragment {
     public void onResume() {
         super.onResume();
         db = DataService.openDatabase(getActivity());
-        handler.post(refresh);
+        getActivity().registerReceiver(newData, new IntentFilter(DataService.NEW_DATA));
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        handler.removeCallbacks(refresh);
+        getActivity().unregisterReceiver(newData);
         db.close();
-    }
-
-    protected void refresh() {
-        data.clear();
-        for (String pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
-            Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });
-            if (cursor.moveToFirst()) {
-                float dbValue = cursor.getFloat(0);
-                data.add(pid);
-                dataMap.put(pid, dbValue);
-            }
-            cursor.close();
-        }
-
-        dataListAdapter.notifyDataSetChanged();
     }
 }

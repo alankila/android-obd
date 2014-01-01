@@ -28,6 +28,8 @@ public class DataService extends Service {
 
     protected static final int COLLECT_INTERVAL_MS = 5000;
 
+    public static final String NEW_DATA = "fi.bel.android.obd.NEW_DATA";
+
     public static SQLiteDatabase openDatabase(Context context) {
         context.getDatabasePath(".").getParentFile().mkdirs();
         SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("data"), null);
@@ -81,6 +83,7 @@ public class DataService extends Service {
         wakelock.acquire();
 
         db = openDatabase(this);
+        db.execSQL("DELETE FROM data");
         insertStatement = db.compileStatement("INSERT INTO data (timestamp, pid, value) VALUES (?, ?, ?)");
 
         handler = new Handler();
@@ -123,5 +126,7 @@ public class DataService extends Service {
                 }
             });
         }
+
+        sendBroadcast(new Intent(NEW_DATA));
     }
 }
