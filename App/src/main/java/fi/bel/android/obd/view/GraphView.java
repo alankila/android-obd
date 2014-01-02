@@ -4,12 +4,15 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.SurfaceView;
 
 import java.util.Map;
 import java.util.TreeMap;
 
 public class GraphView extends SurfaceView {
+    protected static final String TAG = GraphView.class.getSimpleName();
+
     protected static final long WINDOW_MS = 1000 * 60 * 30;
 
     protected static final Paint BG = new Paint();
@@ -20,9 +23,10 @@ public class GraphView extends SurfaceView {
         BG.setARGB(0xff, 0, 0, 0);
         BORDER.setARGB(0xff, 0xff, 0xff, 0xff);
         BORDER.setTextSize(8);
-        GRID.setARGB(0x20, 0xff, 0xff, 0xff);
-        PEN.setARGB(0xff, 0, 0xff, 0);
+        GRID.setARGB(0x40, 0xff, 0xff, 0xff);
+        PEN.setARGB(0xc0, 0, 0xff, 0);
         PEN.setStrokeWidth(2.0f);
+        PEN.setAntiAlias(true);
     }
 
     protected Map<Long, Float> series;
@@ -58,7 +62,7 @@ public class GraphView extends SurfaceView {
 
         /* Time grid */
         for (int i = -30; i <= 0; i += 5) {
-            float x = width - 1 + (i * 60 * 1000) / (float) WINDOW_MS;
+            float x = (width - 1) * (1 + (i * 60 * 1000) / (float) WINDOW_MS);
             canvas.drawLine(x, 1, x, height - 2, GRID);
             canvas.drawText(String.format("%d min", i), x, height - 1, BORDER);
         }
@@ -75,9 +79,9 @@ public class GraphView extends SurfaceView {
         float pos = (float) (Math.ceil(min / scale) * scale);
         float posEnd = (float) (Math.floor(max / scale) * scale);
         while (pos < posEnd) {
-            float y = (pos - min) / (max - min) * (height - 1);
+            float y = (1 - (pos - min) / (max - min)) * (height - 1);
             canvas.drawLine(1, y, width - 2, y, GRID);
-            canvas.drawText(String.format("%g", pos), 0, y, BORDER);
+            canvas.drawText(String.format("%.2g", pos), 0, y, BORDER);
             pos += scale;
         }
 
@@ -88,8 +92,8 @@ public class GraphView extends SurfaceView {
             long time = entry.getKey();
             float value = entry.getValue();
 
-            float x2 = width - 1 + (time - now) / (float) WINDOW_MS;
-            float y2 = (value - min) / (max - min) * (height - 1);
+            float x2 = (width - 1) * (1 + (time - now) / (float) WINDOW_MS);
+            float y2 = (1 - (value - min) / (max - min)) * (height - 1);
 
             if (x1 != Float.NaN) {
                 canvas.drawLine(x1, y1, x2, y2, PEN);

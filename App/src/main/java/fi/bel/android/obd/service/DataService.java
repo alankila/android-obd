@@ -33,7 +33,7 @@ public class DataService extends Service {
     public static SQLiteDatabase openDatabase(Context context) {
         context.getDatabasePath(".").getParentFile().mkdirs();
         SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("data"), null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS data (timestamp long, pid varchar(2), value float)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS data (timestamp long, pid varchar(4), value float)");
         db.execSQL("CREATE INDEX IF NOT EXISTS i_data_pid ON data (pid)");
         return db;
     }
@@ -102,12 +102,24 @@ public class DataService extends Service {
         wakelock.release();
     }
 
-    private void collect() {
+    protected void collect() {
         for (final String pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
+            if (OBD.unit(pid) == null) {
+                continue;
+            }
             String cmd = String.format("%02x %s %d", 1, pid, 1);
             ContainerActivity.BLUETOOTH_RUNNABLE.addTransaction(new BluetoothRunnable.Transaction(cmd) {
                 @Override
                 protected void success(String response) {
+                    if (pid.compareTo("14") >= 0 && pid.compareTo("1b") <= 0) {
+                        handle(pid + "_1", response);
+                        handle(pid + "_2", response);
+                    } else {
+                        handle(pid, response);
+                    }
+                }
+
+                private void handle(String pid, String response) {
                     float newValue = OBD.convert(pid, response);
 
                     Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });

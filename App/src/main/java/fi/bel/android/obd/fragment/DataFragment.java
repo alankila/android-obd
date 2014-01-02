@@ -52,15 +52,27 @@ public class DataFragment extends Fragment {
         public void onReceive(Context context, Intent intent) {
             data.clear();
             for (String pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
-                Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });
-                if (cursor.moveToFirst()) {
-                    float dbValue = cursor.getFloat(0);
-                    data.add(pid);
-                    dataMap.put(pid, dbValue);
+                if (OBD.unit(pid) == null) {
+                    continue;
                 }
-                cursor.close();
+                if (pid.compareTo("14") >= 0 && pid.compareTo("1b") <= 0) {
+                    handle(pid + "_1");
+                    handle(pid + "_2");
+                } else {
+                    handle(pid);
+                }
             }
             dataListAdapter.notifyDataSetChanged();
+        }
+
+        private void handle(String pid) {
+            Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });
+            if (cursor.moveToFirst()) {
+                float dbValue = cursor.getFloat(0);
+                data.add(pid);
+                dataMap.put(pid, dbValue);
+            }
+            cursor.close();
         }
     };
 
@@ -100,6 +112,7 @@ public class DataFragment extends Fragment {
         super.onResume();
         db = DataService.openDatabase(getActivity());
         getActivity().registerReceiver(newData, new IntentFilter(DataService.NEW_DATA));
+        newData.onReceive(null, null);
     }
 
     @Override

@@ -121,28 +121,27 @@ public class OBD {
         switch (pid) {
             case "04":
             case "11":
-                return Integer.parseInt(response.substring(4, 5), 16) * 100 / 255.0f;
+                return Integer.parseInt(response.substring(4, 6), 16) * 100 / 255.0f;
             case "05":
             case "0f":
-                return Integer.parseInt(response.substring(4, 5), 16) - 40;
+                return Integer.parseInt(response.substring(4, 6), 16) - 40;
             case "06":
             case "07":
             case "08":
             case "09":
-                return (Integer.parseInt(response.substring(4, 5), 16) - 128) * 100 / 128.0f;
+                return (Integer.parseInt(response.substring(4, 6), 16) - 128) * 100 / 128.0f;
             case "0a":
-                return Integer.parseInt(response.substring(4, 5), 16) * 3.0f;
+                return Integer.parseInt(response.substring(4, 6), 16) * 3.0f;
             case "0b":
             case "0d":
             case "1f":
-            case "21":
                 return Integer.parseInt(response.substring(4, 6), 16);
             case "0c":
-                return Integer.parseInt(response.substring(4, 6), 16) / 4.0f;
+                return Integer.parseInt(response.substring(4, 8), 16) / 4.0f;
             case "0e":
-                return (Integer.parseInt(response.substring(4, 5), 16) - 128) / 2.0f;
+                return (Integer.parseInt(response.substring(4, 6), 16) - 128) / 2.0f;
             case "10":
-                return Integer.parseInt(response.substring(4, 6), 16) / 100.0f;
+                return Integer.parseInt(response.substring(4, 8), 16) / 100.0f;
             case "14_1":
             case "15_1":
             case "16_1":
@@ -151,7 +150,7 @@ public class OBD {
             case "19_1":
             case "1a_1":
             case "1b_1":
-                return Integer.parseInt(response.substring(4, 5)) / 200.0f;
+                return Integer.parseInt(response.substring(4, 6), 16) / 200.0f;
             case "14_2":
             case "15_2":
             case "16_2":
@@ -160,7 +159,9 @@ public class OBD {
             case "19_2":
             case "1a_2":
             case "1b_2":
-                return (Integer.parseInt(response.substring(5, 6)) - 128) * 100 / 128.0f;
+                return (Integer.parseInt(response.substring(6, 8), 16) - 128) * 100 / 128.0f;
+            case "21":
+                return Integer.parseInt(response.substring(4, 8), 16);
 
             default:
                 return 0;

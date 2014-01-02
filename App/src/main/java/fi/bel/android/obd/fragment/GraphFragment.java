@@ -42,8 +42,22 @@ public class GraphFragment extends Fragment {
         public void onReceive(Context context, Intent intent) {
             /* FIXME: can't afford to do updates like this. */
             data.clear();
-            data.addAll(ContainerActivity.BLUETOOTH_RUNNABLE.pid());
+            for (String pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
+                if (OBD.unit(pid) == null) {
+                    continue;
+                }
+                if (pid.compareTo("14") >= 0 && pid.compareTo("1b") <= 0) {
+                    handle(pid + "_1");
+                    handle(pid + "_2");
+                } else {
+                    handle(pid);
+                }
+            }
             dataListAdapter.notifyDataSetChanged();
+        }
+
+        private void handle(String pid) {
+            data.add(pid);
         }
     };
 
@@ -70,7 +84,7 @@ public class GraphFragment extends Fragment {
 
                 GraphView graph = (GraphView) convertView.findViewById(R.id.graph_item_graph);
                 graph.clear();
-                Cursor cursor = db.rawQuery("SELECT time, value FROM data WHERE pid = ? ORDER BY rowid", new String[] {});
+                Cursor cursor = db.rawQuery("SELECT timestamp, value FROM data WHERE pid = ? ORDER BY rowid", new String[] { pid });
                 while (cursor.moveToNext()) {
                     graph.addPoint(cursor.getLong(0), cursor.getFloat(1));
                 }

@@ -74,7 +74,7 @@ public class BluetoothRunnable implements Runnable {
 
     private final Context context;
 
-    private final BlockingQueue<Transaction> queue = new ArrayBlockingQueue<>(10);
+    private final BlockingQueue<Transaction> queue = new ArrayBlockingQueue<>(100);
 
     private final Set<String> supportedPid = new TreeSet<>();
 
@@ -222,14 +222,7 @@ public class BluetoothRunnable implements Runnable {
                     if ((data & (1 << (31 - j))) != 0) {
                         int pid = i + j + 1;
                         String s = String.format("%02x", pid);
-                        /* These return multi-byte result with different meaning per byte.
-                         * This is also how we will handle bitfield results one day. */
-                        if (pid >= 0x14 && pid <= 0x1b) {
-                            supportedPid.add(s + "_1");
-                            supportedPid.add(s + "_2");
-                        } else {
-                            supportedPid.add(s);
-                        }
+                        supportedPid.add(s);
                     }
                 }
 
