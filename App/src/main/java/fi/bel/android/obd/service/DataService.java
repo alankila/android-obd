@@ -127,6 +127,7 @@ public class DataService extends Service {
             });
         }
 
-        sendBroadcast(new Intent(NEW_DATA));
+        Intent newData = new Intent(NEW_DATA);
+        sendBroadcast(newData);
     }
 }

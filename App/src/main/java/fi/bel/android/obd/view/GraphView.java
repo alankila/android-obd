@@ -9,7 +9,7 @@ import android.view.SurfaceView;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class Graph extends SurfaceView {
+public class GraphView extends SurfaceView {
     protected static final long WINDOW_MS = 1000 * 60 * 30;
 
     protected static final Paint BG = new Paint();
@@ -25,13 +25,21 @@ public class Graph extends SurfaceView {
         PEN.setStrokeWidth(2.0f);
     }
 
-    protected Map<Long, Float> series = new TreeMap<>();
+    protected Map<Long, Float> series;
 
-    protected float min = Float.MAX_VALUE, max = Float.MIN_VALUE;
+    protected float min;
 
-    public Graph(Context context, AttributeSet attrs) {
+    protected float max;
+
+    public GraphView(Context context, AttributeSet attrs) {
         super(context, attrs);
         setWillNotDraw(false);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        setMeasuredDimension(width, width / 2);
     }
 
     @Override
@@ -55,15 +63,22 @@ public class Graph extends SurfaceView {
             canvas.drawText(String.format("%d min", i), x, height - 1, BORDER);
         }
 
-        /* Value grid */
+        /* Value grid. */
         float diff = max - min;
-        float scale = (float) Math.pow(10, Math.log(diff) / Math.log(10) - 1);
-        float pos = Math.round(min * scale) / scale;
-        for (int i = 0; i < 5; i += 1) {
+        float scale = (float) Math.pow(10, Math.floor(Math.log(diff) / Math.log(10)));
+        if (diff / scale > 5.0f) {
+            scale *= 2.0f;
+        }
+        if (diff / scale < 2.5f) {
+            scale /= 2.0f;
+        }
+        float pos = (float) (Math.ceil(min / scale) * scale);
+        float posEnd = (float) (Math.floor(max / scale) * scale);
+        while (pos < posEnd) {
             float y = (pos - min) / (max - min) * (height - 1);
             canvas.drawLine(1, y, width - 2, y, GRID);
             canvas.drawText(String.format("%g", pos), 0, y, BORDER);
-            pos += diff / 5;
+            pos += scale;
         }
 
         /* Value series */
@@ -82,6 +97,20 @@ public class Graph extends SurfaceView {
             x1 = x2;
             y1 = y2;
         }
+
+        /* Draw a final connecting line from the current value to end of time series */
+        if (x1 != Float.NaN) {
+            canvas.drawLine(x1, y1, width - 1, y1, PEN);
+        }
+    }
+
+    /**
+     * Clear all data points to prepare for reuse
+     */
+    public void clear() {
+        series = new TreeMap<>();
+        min = Float.MAX_VALUE;
+        max = Float.MIN_VALUE;
     }
 
     /**

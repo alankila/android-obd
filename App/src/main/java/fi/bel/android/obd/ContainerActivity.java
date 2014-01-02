@@ -11,6 +11,7 @@ import java.util.List;
 
 import fi.bel.android.obd.fragment.ConnectionFragment;
 import fi.bel.android.obd.fragment.DTCSearchFragment;
+import fi.bel.android.obd.fragment.GraphFragment;
 import fi.bel.android.obd.fragment.SelfCheckFragment;
 import fi.bel.android.obd.fragment.DataFragment;
 import fi.bel.android.obd.thread.BluetoothRunnable;
@@ -22,6 +23,7 @@ public class ContainerActivity extends Activity implements ScreenListFragment.Ca
         FRAGMENTS.add(new SelfCheckFragment());
         FRAGMENTS.add(new DTCSearchFragment());
         FRAGMENTS.add(new DataFragment());
+        FRAGMENTS.add(new GraphFragment());
         for (Fragment f : FRAGMENTS) {
             f.setRetainInstance(true);
         }
