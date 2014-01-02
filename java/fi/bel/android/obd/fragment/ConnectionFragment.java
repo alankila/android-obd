@@ -9,7 +9,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.Handler;
 import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,11 +23,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 
 import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
-import fi.bel.android.obd.service.DataService;
 import fi.bel.android.obd.thread.BluetoothRunnable;
 
 public class ConnectionFragment extends Fragment

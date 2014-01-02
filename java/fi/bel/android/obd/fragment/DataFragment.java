@@ -24,14 +24,15 @@ import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
 import fi.bel.android.obd.service.DataService;
 import fi.bel.android.obd.util.OBD;
-import fi.bel.android.obd.view.GraphView;
 
-public class GraphFragment extends Fragment {
-    protected static final String TAG = GraphFragment.class.getSimpleName();
+public class DataFragment extends Fragment {
+    protected static final String TAG = DataFragment.class.getSimpleName();
 
     protected SQLiteDatabase db;
 
     protected List<String> data = new ArrayList<>();
+
+    protected Map<String, Float> dataMap = new HashMap<>();
 
     protected ListView dataList;
 
@@ -40,7 +41,6 @@ public class GraphFragment extends Fragment {
     protected final BroadcastReceiver newData = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            /* FIXME: can't afford to do updates like this. */
             data.clear();
             for (String pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
                 if (OBD.unit(pid) == null) {
@@ -57,37 +57,38 @@ public class GraphFragment extends Fragment {
         }
 
         private void handle(String pid) {
-            data.add(pid);
+            Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });
+            if (cursor.moveToFirst()) {
+                float dbValue = cursor.getFloat(0);
+                data.add(pid);
+                dataMap.put(pid, dbValue);
+            }
+            cursor.close();
         }
     };
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_graph, null);
+        View view = inflater.inflate(R.layout.fragment_data, null);
         dataListAdapter = new ArrayAdapter<String>(getActivity(), 0, 0, data) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 if (convertView == null) {
-                    convertView = getActivity().getLayoutInflater().inflate(R.layout.fragment_graph_item, null);
+                    convertView = getActivity().getLayoutInflater().inflate(R.layout.fragment_data_item, null);
                 }
                 String pid = data.get(position);
+                float pidValue = dataMap.get(pid);
 
+                TextView key = (TextView) convertView.findViewById(R.id.data_item_key);
                 try {
-                    TextView title = (TextView) convertView.findViewById(R.id.graph_item_title);
-                    String titleText = getResources().getString((int) R.string.class.getField("PID" + pid).get(null));
-                    titleText += " / " + OBD.unit(pid);
-                    title.setText(titleText);
+                    key.setText((int) R.string.class.getField("PID" + pid).get(null));
                 }
                 catch (Exception e) {
                     throw new RuntimeException(e);
                 }
 
-                GraphView graph = (GraphView) convertView.findViewById(R.id.graph_item_graph);
-                graph.clear();
-                Cursor cursor = db.rawQuery("SELECT timestamp, value FROM data WHERE pid = ? ORDER BY rowid", new String[] { pid });
-                while (cursor.moveToNext()) {
-                    graph.addPoint(cursor.getLong(0), cursor.getFloat(1));
-                }
+                TextView value = (TextView) convertView.findViewById(R.id.data_item_value);
+                value.setText(String.format("%.2f %s", pidValue, OBD.unit(pid)));
 
                 return convertView;
             }
@@ -102,6 +103,7 @@ public class GraphFragment extends Fragment {
         super.onResume();
         db = DataService.openDatabase(getActivity());
         getActivity().registerReceiver(newData, new IntentFilter(DataService.NEW_DATA));
+        newData.onReceive(null, null);
     }
 
     @Override

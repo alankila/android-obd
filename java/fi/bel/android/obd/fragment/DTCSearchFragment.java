@@ -1,27 +1,20 @@
 package fi.bel.android.obd.fragment;
 
 import android.app.Fragment;
-import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
-import fi.bel.android.obd.thread.BluetoothRunnable;
 import fi.bel.android.obd.util.OBD;
 
 public class DTCSearchFragment extends Fragment {

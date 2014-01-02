@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteQuery;
 import android.database.sqlite.SQLiteStatement;
 import android.os.Handler;
 import android.os.IBinder;
@@ -16,7 +15,6 @@ import android.util.Log;
 
 import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
-import fi.bel.android.obd.fragment.ConnectionFragment;
 import fi.bel.android.obd.thread.BluetoothRunnable;
 import fi.bel.android.obd.util.OBD;
 
@@ -31,7 +29,7 @@ public class DataService extends Service {
     public static final String NEW_DATA = "fi.bel.android.obd.NEW_DATA";
 
     public static SQLiteDatabase openDatabase(Context context) {
-        context.getDatabasePath(".").getParentFile().mkdirs();
+        context.getDatabasePath("").getParentFile().mkdirs();
         SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("data"), null);
         db.execSQL("CREATE TABLE IF NOT EXISTS data (timestamp long, pid varchar(4), value float)");
         db.execSQL("CREATE INDEX IF NOT EXISTS i_data_pid ON data (pid)");

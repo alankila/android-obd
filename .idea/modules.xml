@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/android-obd.iml" filepath="$PROJECT_DIR$/android-obd.iml" />
-      <module fileurl="file://$PROJECT_DIR$/App/src/main/apk.iml" filepath="$PROJECT_DIR$/App/src/main/apk.iml" />
     </modules>
   </component>
 </project>

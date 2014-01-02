@@ -9,7 +9,8 @@
         android:layout_height="wrap_content"
         android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large"
         android:text="&lt; Name &gt;"/>
-    <fi.bel.android.obd.view.GraphView android:id="@+id/graph_item_graph"
+    <fi.bel.android.obd.view.GraphView
+        android:id="@+id/graph_item_graph"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"/>
 

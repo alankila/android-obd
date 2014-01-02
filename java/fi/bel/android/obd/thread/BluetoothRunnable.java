@@ -8,19 +8,13 @@ import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
-import java.nio.channels.Selector;
 import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentSkipListSet;
 
-import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.service.DataService;
 
 /**
