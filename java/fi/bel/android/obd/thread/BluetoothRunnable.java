@@ -64,6 +64,8 @@ public class BluetoothRunnable implements Runnable {
 
     private BluetoothDevice device;
 
+    private BluetoothSocket socket;
+
     private final Handler handler;
 
     private final Context context;
@@ -111,7 +113,6 @@ public class BluetoothRunnable implements Runnable {
     }
 
     private void connectAndRun() {
-        BluetoothSocket socket;
         try {
             socket = device.createRfcommSocketToServiceRecord(SPP);
             socket.connect();
@@ -179,6 +180,7 @@ public class BluetoothRunnable implements Runnable {
 
         try {
             socket.close();
+            socket = null;
         } catch (IOException e) {
             Log.e(TAG, "Error closing socket", e);
         }
@@ -264,5 +266,18 @@ public class BluetoothRunnable implements Runnable {
         }
         context.sendBroadcast(new Intent(ACTION_PHASE).putExtra(EXTRA_PHASE, phase));
         this.phase = phase;
+    }
+
+    /**
+     * Terminates any ongoing transaction by closing the handles.
+     */
+    public void terminate() {
+        if (socket != null) {
+            try {
+                socket.close();
+                socket = null;
+            } catch (IOException e) {
+            }
+        }
     }
 }

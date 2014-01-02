@@ -147,6 +147,7 @@ public class ConnectionFragment extends Fragment
     @Override
     public void onClick(View v) {
         /* This should be fast to do, so we just wait on the main thread. */
+        ContainerActivity.BLUETOOTH_RUNNABLE.terminate();
         while (bluetoothThread.isAlive()) {
             bluetoothThread.interrupt();
             try {
