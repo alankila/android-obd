@@ -29,7 +29,7 @@ public class DataService extends Service {
     public static final String NEW_DATA = "fi.bel.android.obd.NEW_DATA";
 
     public static SQLiteDatabase openDatabase(Context context) {
-        context.getDatabasePath("").getParentFile().mkdirs();
+        context.getDatabasePath(".").getParentFile().mkdirs();
         SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("data"), null);
         db.execSQL("CREATE TABLE IF NOT EXISTS data (timestamp long, pid varchar(4), value float)");
         db.execSQL("CREATE INDEX IF NOT EXISTS i_data_pid ON data (pid)");
