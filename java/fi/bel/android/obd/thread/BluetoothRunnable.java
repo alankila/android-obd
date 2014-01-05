@@ -178,12 +178,7 @@ public class BluetoothRunnable implements Runnable {
             }
         }
 
-        try {
-            socket.close();
-            socket = null;
-        } catch (IOException e) {
-            Log.e(TAG, "Error closing socket", e);
-        }
+        terminate();
     }
 
     /**
@@ -210,7 +205,7 @@ public class BluetoothRunnable implements Runnable {
      * @param i pid to scan onwards from
      */
     private void checkPid(final int i) {
-        queue.add(new Transaction(String.format("%02x %02x %d", 1, i, 1)) {
+        queue.add(new Transaction(String.format("%02x%02x %d", 1, i, 1)) {
             @Override
             protected void success(String response) {
                 int data = (int) Long.parseLong(response.substring(4), 16);
@@ -231,10 +226,21 @@ public class BluetoothRunnable implements Runnable {
         });
     }
 
+    /**
+     * Return the device this runnable is interacting with
+     *
+     * @return BT device
+     */
     public BluetoothDevice getDevice() {
         return device;
     }
 
+    /**
+     * Set the device being worked with. This method should be called before starting
+     * the thread.
+     *
+     * @param device BT device
+     */
     public void setDevice(BluetoothDevice device) {
         this.device = device;
     }
@@ -270,8 +276,11 @@ public class BluetoothRunnable implements Runnable {
 
     /**
      * Terminates any ongoing transaction by closing the handles.
+     *
+     * This method is synchronized because it may be called from UI thread or from this Runnable's
+     * thread itself.
      */
-    public void terminate() {
+    public synchronized void terminate() {
         if (socket != null) {
             try {
                 socket.close();

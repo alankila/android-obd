@@ -105,7 +105,7 @@ public class DataService extends Service {
             if (OBD.unit(pid) == null) {
                 continue;
             }
-            String cmd = String.format("%02x %s %d", 1, pid, 1);
+            String cmd = String.format("%02x%s %d", 1, pid, 1);
             ContainerActivity.BLUETOOTH_RUNNABLE.addTransaction(new BluetoothRunnable.Transaction(cmd) {
                 @Override
                 protected void success(String response) {
