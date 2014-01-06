@@ -5,6 +5,8 @@ import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,6 +67,21 @@ public class ContainerActivity extends Activity implements ScreenListFragment.Ca
             ft.commit();
         }
     }
+
+    /*@Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        for (int i = 0; i < FRAGMENTS.size(); i += 1) {
+            String className = FRAGMENTS.get(i).getClass().getSimpleName();
+            menu.add(0, i, i, getResources().getIdentifier(className, "string", getPackageName()));
+        }
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        onItemSelected(item.getItemId());
+        return true;
+    }*/
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {

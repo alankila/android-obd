@@ -22,7 +22,7 @@ import fi.bel.android.obd.util.OBD;
 public class SelfCheckFragment extends Fragment {
     protected static final String TAG = SelfCheckFragment.class.getSimpleName();
 
-    protected enum SelfCheckTypes {
+    protected enum SelfCheckType {
         MIL,                    /* A7 */
         FAULT_CODES,            /* A6-A0 */
 
@@ -50,9 +50,9 @@ public class SelfCheckFragment extends Fragment {
         EGR_VVT_SYSTEM          /* C7/D7 */
     }
 
-    protected List<SelfCheckTypes> selfCheck = new ArrayList<>();
+    protected List<SelfCheckType> selfCheck = new ArrayList<>();
 
-    protected ArrayAdapter<SelfCheckTypes> selfCheckListAdapter;
+    protected ArrayAdapter<SelfCheckType> selfCheckListAdapter;
 
     protected ListView selfCheckList;
 
@@ -69,24 +69,19 @@ public class SelfCheckFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_fault, null);
-        selfCheckListAdapter = new ArrayAdapter<SelfCheckTypes>(getActivity(), 0, 0, selfCheck) {
+        selfCheckListAdapter = new ArrayAdapter<SelfCheckType>(getActivity(), 0, 0, selfCheck) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 if (convertView == null) {
                     convertView = getActivity().getLayoutInflater().inflate(R.layout.fragment_fault_item, null);
                 }
-                SelfCheckTypes selfcheckType = selfCheck.get(position);
+                SelfCheckType selfCheckType = selfCheck.get(position);
 
                 TextView name = (TextView) convertView.findViewById(R.id.fault_item_name);
-                try {
-                    name.setText((int) R.string.class.getField(selfcheckType.toString()).get(null));
-                }
-                catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                name.setText(getResources().getIdentifier(selfCheckType.toString(), "string", getActivity().getPackageName()));
 
                 TextView state = (TextView) convertView.findViewById(R.id.fault_item_state);
-                switch (selfcheckType) {
+                switch (selfCheckType) {
                     case MIL:
                         state.setText((selfCheckStatus & 0x80000000) != 0 ? "On" : "Off");
                         break;
@@ -229,61 +224,61 @@ public class SelfCheckFragment extends Fragment {
                 protected void success(String response) {
                     selfCheckStatus = (int) Long.parseLong(response.substring(4), 16);
 
-                    selfCheck.add(SelfCheckTypes.MIL);
-                    selfCheck.add(SelfCheckTypes.FAULT_CODES);
+                    selfCheck.add(SelfCheckType.MIL);
+                    selfCheck.add(SelfCheckType.FAULT_CODES);
                     if ((selfCheckStatus & 0x100000) != 0) {
-                        selfCheck.add(SelfCheckTypes.MISFIRE);
+                        selfCheck.add(SelfCheckType.MISFIRE);
                     }
                     if ((selfCheckStatus & 0x200000) != 0) {
-                        selfCheck.add(SelfCheckTypes.FUEL_SYSTEM);
+                        selfCheck.add(SelfCheckType.FUEL_SYSTEM);
                     }
                     if ((selfCheckStatus & 0x400000) != 0) {
-                        selfCheck.add(SelfCheckTypes.COMPONENTS);
+                        selfCheck.add(SelfCheckType.COMPONENTS);
                     }
                     boolean compression = (selfCheckStatus & 0x800000) != 0;
                     if (compression) {
                         if ((selfCheckStatus & 0x0100) != 0) {
-                            selfCheck.add(SelfCheckTypes.CATALYST);
+                            selfCheck.add(SelfCheckType.CATALYST);
                         }
                         if ((selfCheckStatus & 0x0200) != 0) {
-                            selfCheck.add(SelfCheckTypes.HEATED_CATALYST);
+                            selfCheck.add(SelfCheckType.HEATED_CATALYST);
                         }
                         if ((selfCheckStatus & 0x0400) != 0) {
-                            selfCheck.add(SelfCheckTypes.EVAPORATIVE_SYSTEM);
+                            selfCheck.add(SelfCheckType.EVAPORATIVE_SYSTEM);
                         }
                         if ((selfCheckStatus & 0x0800) != 0) {
-                            selfCheck.add(SelfCheckTypes.SECONDARY_AIR_SYSTEM);
+                            selfCheck.add(SelfCheckType.SECONDARY_AIR_SYSTEM);
                         }
                         if ((selfCheckStatus & 0x1000) != 0) {
-                            selfCheck.add(SelfCheckTypes.AC_REFRIDGERANT);
+                            selfCheck.add(SelfCheckType.AC_REFRIDGERANT);
                         }
                         if ((selfCheckStatus & 0x2000) != 0) {
-                            selfCheck.add(SelfCheckTypes.OXYGEN_SENSOR);
+                            selfCheck.add(SelfCheckType.OXYGEN_SENSOR);
                         }
                         if ((selfCheckStatus & 0x4000) != 0) {
-                            selfCheck.add(SelfCheckTypes.OXYGEN_SENSOR_HEATER);
+                            selfCheck.add(SelfCheckType.OXYGEN_SENSOR_HEATER);
                         }
                         if ((selfCheckStatus & 0x8000) != 0) {
-                            selfCheck.add(SelfCheckTypes.EGR_SYSTEM);
+                            selfCheck.add(SelfCheckType.EGR_SYSTEM);
                         }
                     } else {
                         if ((selfCheckStatus & 0x0100) != 0) {
-                            selfCheck.add(SelfCheckTypes.NMHC_CATALYST);
+                            selfCheck.add(SelfCheckType.NMHC_CATALYST);
                         }
                         if ((selfCheckStatus & 0x0200) != 0) {
-                            selfCheck.add(SelfCheckTypes.NOx_SCR_MONITOR);
+                            selfCheck.add(SelfCheckType.NOx_SCR_MONITOR);
                         }
                         if ((selfCheckStatus & 0x0800) != 0) {
-                            selfCheck.add(SelfCheckTypes.BOOST_PRESSURE);
+                            selfCheck.add(SelfCheckType.BOOST_PRESSURE);
                         }
                         if ((selfCheckStatus & 0x2000) != 0) {
-                            selfCheck.add(SelfCheckTypes.EXHAUST_GAS_SENSOR);
+                            selfCheck.add(SelfCheckType.EXHAUST_GAS_SENSOR);
                         }
                         if ((selfCheckStatus & 0x4000) != 0) {
-                            selfCheck.add(SelfCheckTypes.PM_FILTER_MONITORING);
+                            selfCheck.add(SelfCheckType.PM_FILTER_MONITORING);
                         }
                         if ((selfCheckStatus & 0x8000) != 0) {
-                            selfCheck.add(SelfCheckTypes.EGR_VVT_SYSTEM);
+                            selfCheck.add(SelfCheckType.EGR_VVT_SYSTEM);
                         }
                     }
 

@@ -80,12 +80,7 @@ public class DataFragment extends Fragment {
                 float pidValue = dataMap.get(pid);
 
                 TextView key = (TextView) convertView.findViewById(R.id.data_item_key);
-                try {
-                    key.setText((int) R.string.class.getField("PID" + pid).get(null));
-                }
-                catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                key.setText(getResources().getIdentifier("PID" + pid, "string", getActivity().getPackageName()));
 
                 TextView value = (TextView) convertView.findViewById(R.id.data_item_value);
                 value.setText(String.format("%.2f %s", pidValue, OBD.unit(pid)));

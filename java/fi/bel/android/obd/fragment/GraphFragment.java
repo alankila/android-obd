@@ -70,15 +70,10 @@ public class GraphFragment extends Fragment {
                 }
                 String pid = data.get(position);
 
-                try {
-                    TextView title = (TextView) convertView.findViewById(R.id.graph_item_title);
-                    String titleText = getResources().getString((int) R.string.class.getField("PID" + pid).get(null));
-                    titleText += " / " + OBD.unit(pid);
-                    title.setText(titleText);
-                }
-                catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                TextView title = (TextView) convertView.findViewById(R.id.graph_item_title);
+                String titleText = getResources().getString(getResources().getIdentifier("PID" + pid, "string", getActivity().getPackageName()));
+                titleText += " / " + OBD.unit(pid);
+                title.setText(titleText);
 
                 GraphView graph = (GraphView) convertView.findViewById(R.id.graph_item_graph);
                 graph.clear();
