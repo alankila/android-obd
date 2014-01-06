@@ -12,7 +12,6 @@
     <string name="INITIALIZING">Initializing...</string>
     <string name="READY">Ready!</string>
 
-    <string name="connection_no_bluetooth">Please enable Bluetooth first!</string>
     <string name="connection_device_list">Select BT device</string>
     <string name="connection_bond">BT settings...</string>
     <string name="connection_disconnect">Disconnect</string>

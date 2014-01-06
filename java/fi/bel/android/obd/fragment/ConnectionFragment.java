@@ -73,30 +73,25 @@ public class ConnectionFragment extends Fragment
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        if (adapter.isEnabled()) {
-            View view = inflater.inflate(R.layout.fragment_connection, null);
+        View view = inflater.inflate(R.layout.fragment_connection, null);
 
-            Button bondButton = (Button) view.findViewById(R.id.connection_bond);
-            bondButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
-                }
-            });
+        Button bondButton = (Button) view.findViewById(R.id.connection_bond);
+        bondButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+            startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+            }
+        });
 
-            deviceList = (ListView) view.findViewById(R.id.connection_device_list);
-            deviceList.setAdapter(deviceListAdapter);
-            deviceList.setOnItemClickListener(this);
+        deviceList = (ListView) view.findViewById(R.id.connection_device_list);
+        deviceList.setAdapter(deviceListAdapter);
+        deviceList.setOnItemClickListener(this);
 
-            disconnectButton = (Button) view.findViewById(R.id.connection_disconnect);
-            disconnectButton.setOnClickListener(this);
+        disconnectButton = (Button) view.findViewById(R.id.connection_disconnect);
+        disconnectButton.setOnClickListener(this);
 
-            phaseText = (TextView) view.findViewById(R.id.connection_phase);
-            return view;
-        } else {
-            return inflater.inflate(R.layout.fragment_connection_no_bt, null);
-        }
+        phaseText = (TextView) view.findViewById(R.id.connection_phase);
+        return view;
     }
 
     @Override
@@ -162,7 +157,8 @@ public class ConnectionFragment extends Fragment
      * Update the UI state to reflect current state of the BT system.
      */
     private void updateUiState() {
-        deviceList.setEnabled(ContainerActivity.BLUETOOTH_RUNNABLE.getPhase() == BluetoothRunnable.Phase.DISCONNECTED);
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        deviceList.setEnabled(adapter.isEnabled() && ContainerActivity.BLUETOOTH_RUNNABLE.getPhase() == BluetoothRunnable.Phase.DISCONNECTED);
         if (deviceList.isEnabled()) {
             ContainerActivity.BLUETOOTH_RUNNABLE.setDevice(null);
             bluetoothThread = null;
