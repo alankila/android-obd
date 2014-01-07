@@ -77,7 +77,7 @@ public class DataService extends Service {
         startForeground(1, notification.build());
 
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        wakelock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Sensor Data Collection Over BT");
+        wakelock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "OBD Data Collection Over BT");
         wakelock.acquire();
 
         db = openDatabase(this);
@@ -129,15 +129,19 @@ public class DataService extends Service {
                     }
                     cursor.close();
 
-                    insertStatement.bindLong(1, System.currentTimeMillis());
+                    long time = System.currentTimeMillis();
+                    insertStatement.bindLong(1, time);
                     insertStatement.bindString(2, pid);
                     insertStatement.bindDouble(3, newValue);
                     insertStatement.executeInsert();
+
+                    Intent newData = new Intent(NEW_DATA);
+                    newData.putExtra("time", time);
+                    newData.putExtra("pid", pid);
+                    newData.putExtra("value", newValue);
+                    sendBroadcast(newData);
                 }
             });
         }
-
-        Intent newData = new Intent(NEW_DATA);
-        sendBroadcast(newData);
     }
 }

@@ -11,8 +11,9 @@ import java.util.TreeMap;
 
 public class GraphView extends SurfaceView {
     protected static final String TAG = GraphView.class.getSimpleName();
+    protected static final String[] UNIT = new String[] { "", "k", "M", "G" };
 
-    protected static final long WINDOW_MS = 1000 * 60 * 30;
+    public static final long WINDOW_MS = 1000 * 60 * 30;
 
     protected static final Paint BG = new Paint();
     protected static final Paint BORDER = new Paint();
@@ -27,6 +28,8 @@ public class GraphView extends SurfaceView {
         PEN.setStrokeWidth(2.0f);
         PEN.setAntiAlias(true);
     }
+
+    protected String pid;
 
     protected Map<Long, Float> series;
 
@@ -77,10 +80,10 @@ public class GraphView extends SurfaceView {
         }
         float pos = (float) (Math.ceil(min / scale) * scale);
         float posEnd = (float) (Math.floor(max / scale) * scale);
-        while (pos < posEnd) {
+        while (pos <= posEnd) {
             float y = (1 - (pos - min) / (max - min)) * (height - 1);
             canvas.drawLine(1, y, width - 2, y, GRID);
-            canvas.drawText(String.format("%.2g", pos), 0, y, BORDER);
+            canvas.drawText(valueFormat(pos), 0, y, BORDER);
             pos += scale;
         }
 
@@ -108,9 +111,32 @@ public class GraphView extends SurfaceView {
     }
 
     /**
+     * Return a formatted value scaled appropriately to the unit.
+     *
+     * @param value
+     * @return value string with unit
+     */
+    private static String valueFormat(float value) {
+        float scaleValue = Math.abs(value);
+        if (scaleValue < 1f) {
+            scaleValue = 1f;
+        }
+        int scale = (int) Math.floor(Math.log(scaleValue) / Math.log(1000));
+        return String.format("%.1f %s", value / Math.pow(1000, scale), UNIT[scale]);
+    }
+
+    public String getPid() {
+        return pid;
+    }
+
+    public void setPid(String pid) {
+        this.pid = pid;
+    }
+
+    /**
      * Clear all data points to prepare for reuse
      */
-    public void clear() {
+    public void clearPoints() {
         series = new TreeMap<>();
         min = Float.MAX_VALUE;
         max = Float.MIN_VALUE;

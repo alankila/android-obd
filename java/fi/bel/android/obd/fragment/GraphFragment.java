@@ -38,24 +38,19 @@ public class GraphFragment extends Fragment {
     protected final BroadcastReceiver newData = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            /* FIXME: can't afford to do updates like this. */
-            data.clear();
-            for (String pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
-                if (OBD.unit(pid) == null) {
-                    continue;
-                }
-                if (pid.compareTo("14") >= 0 && pid.compareTo("1b") <= 0) {
-                    handle(pid + "_1");
-                    handle(pid + "_2");
-                } else {
-                    handle(pid);
+            long time = intent.getLongExtra("time", 0);
+            String pid = intent.getStringExtra("pid");
+            float value = intent.getFloatExtra("value", 0);
+
+            if (! data.contains(pid)) {
+                data.add(pid);
+            }
+            for (View view : dataList.getTouchables()) {
+                GraphView gv = (GraphView) view.findViewById(R.id.graph_item_graph);
+                if (pid.equals(gv.getPid())) {
+                    gv.addPoint(time, value);
                 }
             }
-            dataListAdapter.notifyDataSetChanged();
-        }
-
-        private void handle(String pid) {
-            data.add(pid);
         }
     };
 
@@ -76,7 +71,8 @@ public class GraphFragment extends Fragment {
                 title.setText(titleText);
 
                 GraphView graph = (GraphView) convertView.findViewById(R.id.graph_item_graph);
-                graph.clear();
+                graph.setPid(pid);
+                graph.clearPoints();
                 Cursor cursor = db.rawQuery("SELECT timestamp, value FROM data WHERE pid = ? ORDER BY rowid", new String[] { pid });
                 while (cursor.moveToNext()) {
                     graph.addPoint(cursor.getLong(0), cursor.getFloat(1));
@@ -94,6 +90,7 @@ public class GraphFragment extends Fragment {
     public void onResume() {
         super.onResume();
         db = DataService.openDatabase(getActivity());
+        data.clear();
         getActivity().registerReceiver(newData, new IntentFilter(DataService.NEW_DATA));
     }
 
