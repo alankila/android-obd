@@ -39,15 +39,15 @@ public class GraphFragment extends Fragment {
         @Override
         public void onReceive(Context context, Intent intent) {
             long time = intent.getLongExtra("time", 0);
-            String pid = intent.getStringExtra("pid");
+            String code = intent.getStringExtra("code");
             float value = intent.getFloatExtra("value", 0);
 
-            if (! data.contains(pid)) {
-                data.add(pid);
+            if (! data.contains(code)) {
+                data.add(code);
             }
             for (View view : dataList.getTouchables()) {
                 GraphView gv = (GraphView) view.findViewById(R.id.graph_item_graph);
-                if (pid.equals(gv.getPid())) {
+                if (code.equals(gv.getCode())) {
                     gv.addPoint(time, value);
                 }
             }
@@ -63,17 +63,17 @@ public class GraphFragment extends Fragment {
                 if (convertView == null) {
                     convertView = getActivity().getLayoutInflater().inflate(R.layout.fragment_graph_item, null);
                 }
-                String pid = data.get(position);
+                String code = data.get(position);
 
                 TextView title = (TextView) convertView.findViewById(R.id.graph_item_title);
-                String titleText = getResources().getString(getResources().getIdentifier("PID" + pid, "string", getActivity().getPackageName()));
-                titleText += " / " + OBD.unit(pid);
+                String titleText = getResources().getString(getResources().getIdentifier("PID" + code, "string", getActivity().getPackageName()));
+                titleText += " / " + OBD.unit(code);
                 title.setText(titleText);
 
                 GraphView graph = (GraphView) convertView.findViewById(R.id.graph_item_graph);
-                graph.setPid(pid);
+                graph.setCode(code);
                 graph.clearPoints();
-                Cursor cursor = db.rawQuery("SELECT timestamp, value FROM data WHERE pid = ? ORDER BY rowid", new String[] { pid });
+                Cursor cursor = db.rawQuery("SELECT timestamp, value FROM data WHERE code = ? ORDER BY rowid", new String[] { code });
                 while (cursor.moveToNext()) {
                     graph.addPoint(cursor.getLong(0), cursor.getFloat(1));
                 }

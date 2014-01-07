@@ -65,9 +65,37 @@ public class OBD {
         }
     }
 
-    /* XXX: uninterpreted stuff we might want to add later: 03, 12, 13, 1c, 1d, 1e */
-    public static String unit(String pid) {
+    /**
+     * Convert an OBD pid to internal code, which we use to map multi-function
+     * single PIDs to separate meters.
+     *
+     * @param pid OBD code
+     * @return list of codes to use for unit and convert
+     */
+    public static String[] pidToCodeList(String pid) {
         switch (pid) {
+            case "03":
+                return new String[] { pid + "_1", pid + "_2" };
+            case "14":
+            case "15":
+            case "16":
+            case "17":
+            case "18":
+            case "19":
+            case "1a":
+            case "1b":
+                return new String[] { pid + "_1" , pid + "_2" };
+            default:
+                return new String[] { pid };
+        }
+    }
+
+    /* XXX: uninterpreted stuff we might want to add later: 1c, 1d, 1e */
+    public static String unit(String code) {
+        switch (code) {
+            case "03_1":
+            case "03_2":
+                return "";
             case "04":
             case "11":
                 return "%";
@@ -90,6 +118,9 @@ public class OBD {
                 return "deg";
             case "10":
                 return "g/s";
+            case "12":
+            case "13":
+                return "";
             case "14_1":
             case "15_1":
             case "16_1":
@@ -108,6 +139,8 @@ public class OBD {
             case "1a_2":
             case "1b_2":
                 return "%";
+            case "1c":
+                return "";
             case "1f":
                 return "s";
             case "21":
@@ -117,8 +150,21 @@ public class OBD {
         }
     }
 
-    public static float convert(String pid, String response) {
-        switch (pid) {
+    /**
+     * Returns the raw value to be stored in database.
+     * <p>
+     * Value is converted to some sensible SI representation when possible
+     *
+     * @param code
+     * @param response
+     * @return
+     */
+    public static float convert(String code, String response) {
+        switch (code) {
+            case "03_1":
+                return Integer.parseInt(response.substring(4, 6), 16);
+            case "03_2":
+                return Integer.parseInt(response.substring(6, 8), 16);
             case "04":
             case "11":
                 return Integer.parseInt(response.substring(4, 6), 16) * 100 / 255.0f;
@@ -134,6 +180,9 @@ public class OBD {
                 return Integer.parseInt(response.substring(4, 6), 16) * 3.0f;
             case "0b":
             case "0d":
+            case "12":
+            case "13":
+            case "1c":
             case "1f":
                 return Integer.parseInt(response.substring(4, 6), 16);
             case "0c":

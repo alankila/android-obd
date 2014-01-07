@@ -43,25 +43,22 @@ public class DataFragment extends Fragment {
         public void onReceive(Context context, Intent intent) {
             data.clear();
             for (String pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
-                if (OBD.unit(pid) == null) {
-                    continue;
-                }
-                if (pid.compareTo("14") >= 0 && pid.compareTo("1b") <= 0) {
-                    handle(pid + "_1");
-                    handle(pid + "_2");
-                } else {
-                    handle(pid);
+                for (String code : OBD.pidToCodeList(pid)) {
+                    if (OBD.unit(code) == null) {
+                       continue;
+                    }
+                    handle(code);
                 }
             }
             dataListAdapter.notifyDataSetChanged();
         }
 
-        private void handle(String pid) {
-            Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });
+        private void handle(String code) {
+            Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE code = ?)", new String[] { code });
             if (cursor.moveToFirst()) {
                 float dbValue = cursor.getFloat(0);
-                data.add(pid);
-                dataMap.put(pid, dbValue);
+                data.add(code);
+                dataMap.put(code, dbValue);
             }
             cursor.close();
         }

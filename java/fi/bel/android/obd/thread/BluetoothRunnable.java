@@ -200,7 +200,7 @@ public class BluetoothRunnable implements Runnable {
     }
 
     /**
-     * Discover all known PID values
+     * Discover all known PID values of the car.
      *
      * @param i pid to scan onwards from
      */
@@ -208,7 +208,7 @@ public class BluetoothRunnable implements Runnable {
         queue.add(new Transaction(String.format("%02x%02x %d", 1, i, 1)) {
             @Override
             protected void success(String response) {
-                int data = (int) Long.parseLong(response.substring(4), 16);
+                int data = (int) Long.parseLong(response.substring(4, 12), 16);
                 for (int j = 0; j < 32; j ++) {
                     if ((data & (1 << (31 - j))) != 0) {
                         int pid = i + j + 1;
@@ -220,8 +220,59 @@ public class BluetoothRunnable implements Runnable {
                 if (i != 0xe0 && supportedPid.contains(String.format("%02x", i + 32))) {
                     checkPid(i + 32);
                 } else {
-                    setPhase(Phase.READY);
+                    checkPid13();
                 }
+            }
+        });
+    }
+
+    /**
+     * Discover pid 14-1b support from pid 13. (4 sensors, 2 banks).
+     * We will then try 1d afterwards.
+     */
+    private void checkPid13() {
+        if (! supportedPid.contains("13")) {
+            checkPid1d();
+            return;
+        }
+        queue.add(new Transaction(String.format("%02x%02x %d", 1, 0x13, 1)) {
+            @Override
+            protected void success(String response) {
+                int data = Integer.parseInt(response.substring(4, 6), 16);
+                for (int i = 0; i < 8; i += 1) {
+                    if ((data & (1 << i)) != 0) {
+                        String s = String.format("%02x", 0x14 + i);
+                        supportedPid.add(s);
+                    }
+                }
+
+                checkPid1d();
+            }
+        });
+    }
+
+    /**
+     * Check pid 1d. This also reports support for 14-1b, but the meanings are
+     * different (2 sensors, 4 banks). We currently have no way to encode this
+     * information in supportedPid. We might be best off ignoring 1d altogether. :-/
+     */
+    private void checkPid1d() {
+        if (! supportedPid.contains("1d")) {
+            setPhase(Phase.READY);
+            return;
+        }
+        queue.add(new Transaction(String.format("%02x%02x %d", 1, 0x1d, 1)) {
+            @Override
+            protected void success(String response) {
+                int data = Integer.parseInt(response.substring(4, 6), 16);
+                for (int i = 0; i < 8; i += 1) {
+                    if ((data & (1 << i)) != 0) {
+                        String s = String.format("%02x", 0x14 + i);
+                        supportedPid.add(s);
+                    }
+                }
+
+                setPhase(Phase.READY);
             }
         });
     }

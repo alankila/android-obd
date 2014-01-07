@@ -30,9 +30,9 @@ public class DataService extends Service {
 
     public static SQLiteDatabase openDatabase(Context context) {
         context.getDatabasePath(".").getParentFile().mkdirs();
-        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("data"), null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS data (timestamp long, pid varchar(4), value float)");
-        db.execSQL("CREATE INDEX IF NOT EXISTS i_data_pid ON data (pid)");
+        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("data2"), null);
+        db.execSQL("CREATE TABLE IF NOT EXISTS data (timestamp long, code varchar(6), value float)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS i_data_pid ON data (code)");
         return db;
     }
 
@@ -82,7 +82,7 @@ public class DataService extends Service {
 
         db = openDatabase(this);
         db.execSQL("DELETE FROM data");
-        insertStatement = db.compileStatement("INSERT INTO data (timestamp, pid, value) VALUES (?, ?, ?)");
+        insertStatement = db.compileStatement("INSERT INTO data (timestamp, code, value) VALUES (?, ?, ?)");
 
         handler = new Handler();
 
@@ -109,18 +109,15 @@ public class DataService extends Service {
             ContainerActivity.BLUETOOTH_RUNNABLE.addTransaction(new BluetoothRunnable.Transaction(cmd) {
                 @Override
                 protected void success(String response) {
-                    if (pid.compareTo("14") >= 0 && pid.compareTo("1b") <= 0) {
-                        handle(pid + "_1", response);
-                        handle(pid + "_2", response);
-                    } else {
-                        handle(pid, response);
+                    for (String code : OBD.pidToCodeList(pid)) {
+                        handle(code, response);
                     }
                 }
 
-                private void handle(String pid, String response) {
-                    float newValue = OBD.convert(pid, response);
+                private void handle(String code, String response) {
+                    float newValue = OBD.convert(code, response);
 
-                    Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)", new String[] { pid });
+                    Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE code = ?)", new String[] { code });
                     if (cursor.moveToFirst()) {
                         float dbValue = cursor.getFloat(0);
                         if (dbValue == newValue) {
@@ -131,13 +128,13 @@ public class DataService extends Service {
 
                     long time = System.currentTimeMillis();
                     insertStatement.bindLong(1, time);
-                    insertStatement.bindString(2, pid);
+                    insertStatement.bindString(2, code);
                     insertStatement.bindDouble(3, newValue);
                     insertStatement.executeInsert();
 
                     Intent newData = new Intent(NEW_DATA);
                     newData.putExtra("time", time);
-                    newData.putExtra("pid", pid);
+                    newData.putExtra("code", code);
                     newData.putExtra("value", newValue);
                     sendBroadcast(newData);
                 }

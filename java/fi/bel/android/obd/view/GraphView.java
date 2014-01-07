@@ -125,12 +125,12 @@ public class GraphView extends SurfaceView {
         return String.format("%.1f %s", value / Math.pow(1000, scale), UNIT[scale]);
     }
 
-    public String getPid() {
+    public String getCode() {
         return pid;
     }
 
-    public void setPid(String pid) {
-        this.pid = pid;
+    public void setCode(String code) {
+        this.pid = code;
     }
 
     /**
