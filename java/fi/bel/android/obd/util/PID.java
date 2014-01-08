@@ -148,6 +148,7 @@ public class PID implements Comparable<PID> {
 
             /* These values are oxygen sensors. We can't visualize them here,
              * they are generated from state of PIDs 13 and 1d in BluetoothRunnable. */
+            case 0x13:
             case 0x14:
             case 0x15:
             case 0x16:
@@ -156,13 +157,8 @@ public class PID implements Comparable<PID> {
             case 0x19:
             case 0x1a:
             case 0x1b:
-                return null;
-
-            case 0x13:
-                return new Oxygen13(code);
-
             case 0x1d:
-                return new Oxygen1D(code);
+                return null;
 
             default:
                 return new PID(code);
