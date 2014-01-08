@@ -26,9 +26,9 @@ public class OxygenSensor extends PID {
     @Override
     public String key(Context context, int idx) {
         if (idx == 0) {
-            return String.format(context.getString(R.string.PID14_1), bank, sensor);
+            return String.format(context.getString(R.string.PID14_1), bank+1, sensor+1);
         } else {
-            return String.format(context.getString(R.string.PID14_2), bank, sensor);
+            return String.format(context.getString(R.string.PID14_2), bank+1, sensor+1);
         }
     }
 

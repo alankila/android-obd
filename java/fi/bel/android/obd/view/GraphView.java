@@ -142,6 +142,7 @@ public class GraphView extends SurfaceView {
         series = new TreeMap<>();
         min = Float.MAX_VALUE;
         max = Float.MIN_VALUE;
+        invalidate();
     }
 
     /**
@@ -158,5 +159,6 @@ public class GraphView extends SurfaceView {
         if (value + 1 > max) {
             max = value + 1;
         }
+        invalidate();
     }
 }

@@ -5,8 +5,8 @@ import android.content.Context;
 /**
  * Created by alankila on 8.1.2014.
  */
-public class PID {
-    public static class Sensor {
+public class PID implements Comparable<PID> {
+    public static class Sensor implements Comparable<Sensor> {
         private final PID pid;
 
         private final int i;
@@ -22,6 +22,21 @@ public class PID {
 
         public int getIndex() {
             return i;
+        }
+
+        @Override
+        public int compareTo(Sensor another) {
+            int value = pid.compareTo(another.pid);
+            if (value != 0) {
+                return value;
+            }
+            if (i < another.i) {
+                return -1;
+            }
+            if (i > another.i) {
+                return 1;
+            }
+            return 0;
         }
     }
 
@@ -126,6 +141,11 @@ public class PID {
             case 0x1c:
                 return new StatusValue(code);
 
+            /* This is visualized by the fault code fragment. */
+            case 0x01:
+            /* We do not support DTC freeze frames. */
+            case 0x02:
+
             /* These values are oxygen sensors. We can't visualize them here,
              * they are generated from state of PIDs 13 and 1d in BluetoothRunnable. */
             case 0x14:
@@ -147,5 +167,16 @@ public class PID {
             default:
                 return new PID(code);
         }
+    }
+
+    @Override
+    public int compareTo(PID another) {
+        if (code < another.code) {
+            return -1;
+        }
+        if (code > another.code) {
+            return 1;
+        }
+        return 0;
     }
 }

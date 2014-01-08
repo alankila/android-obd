@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +18,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -54,8 +56,12 @@ public class GraphFragment extends Fragment {
                 for (PID pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
                     if (pid.getCode() == code) {
                         for (int i = 0; i < pid.values(); i += 1) {
-                            data.add(new PID.Sensor(pid, i));
+                            if (pid.unit(i) != null) {
+                                data.add(new PID.Sensor(pid, i));
+                            }
                         }
+                        Collections.sort(data);
+                        dataListAdapter.notifyDataSetChanged();
                     }
                 }
                 codesAdded.add(code);
@@ -82,7 +88,12 @@ public class GraphFragment extends Fragment {
                 PID.Sensor sensor = data.get(position);
 
                 TextView title = (TextView) convertView.findViewById(R.id.graph_item_title);
-                title.setText(sensor.getPid().key(getActivity(), sensor.getIndex()));
+                String titleText = String.format(
+                        "%s (%s)",
+                        sensor.getPid().key(getActivity(), sensor.getIndex()),
+                        sensor.getPid().unit(sensor.getIndex())
+                );
+                title.setText(titleText);
 
                 GraphView graph = (GraphView) convertView.findViewById(R.id.graph_item_graph);
                 graph.setSensor(sensor);
@@ -98,6 +109,7 @@ public class GraphFragment extends Fragment {
                         graph.addPoint(timestamp, value);
                     }
                 }
+                visibleViews.add(graph);
 
                 return convertView;
             }

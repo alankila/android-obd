@@ -82,7 +82,7 @@ public class DataService extends Service {
 
         db = openDatabase(this);
         db.execSQL("DELETE FROM data");
-        insertStatement = db.compileStatement("INSERT INTO data (timestamp, code, value) VALUES (?, ?, ?)");
+        insertStatement = db.compileStatement("INSERT INTO data (timestamp, pid, value) VALUES (?, ?, ?)");
 
         handler = new Handler();
 
@@ -114,14 +114,12 @@ public class DataService extends Service {
                             "SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)",
                             new String[] { String.valueOf(code) }
                     );
-                    if (cursor.moveToFirst()) {
-                        String dbValue = cursor.getString(0);
-                        if (! response.equals(dbValue)) {
-                            insertStatement.bindLong(1, time);
-                            insertStatement.bindLong(2, pid.getCode());
-                            insertStatement.bindString(3, response);
-                            insertStatement.executeInsert();
-                        }
+
+                    if (!cursor.moveToFirst() || !response.equals(cursor.getString(0))) {
+                        insertStatement.bindLong(1, time);
+                        insertStatement.bindLong(2, pid.getCode());
+                        insertStatement.bindString(3, response);
+                        insertStatement.executeInsert();
                     }
                     cursor.close();
 

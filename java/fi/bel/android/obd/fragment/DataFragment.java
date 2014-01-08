@@ -17,6 +17,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -62,6 +63,7 @@ public class DataFragment extends Fragment {
                         for (int i = 0; i < pid.values(); i += 1) {
                             data.add(new PID.Sensor(pid, i));
                         }
+                        Collections.sort(data);
                     }
                 }
                 codesAdded.add(code);

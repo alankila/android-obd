@@ -218,8 +218,8 @@ public class SelfCheckFragment extends Fragment {
         selfCheckStatus = 0;
         selfCheck.clear();
         selfCheckListAdapter.clear();
-        if (enabled && ContainerActivity.BLUETOOTH_RUNNABLE.pid().contains("01")) {
-            ContainerActivity.BLUETOOTH_RUNNABLE.addTransaction(new BluetoothRunnable.Transaction("01 01 1") {
+        if (enabled) {
+            ContainerActivity.BLUETOOTH_RUNNABLE.addTransaction(new BluetoothRunnable.Transaction("0101 1") {
                 @Override
                 protected void success(String response) {
                     selfCheckStatus = (int) Long.parseLong(response.substring(4), 16);

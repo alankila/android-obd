@@ -228,7 +228,7 @@ public class BluetoothRunnable implements Runnable {
             @Override
             protected void success(String response) {
                 int data = (int) Long.parseLong(response.substring(4, 12), 16);
-                for (int j = 0; j < 32; j++) {
+                for (int j = 0; j < 31; j++) {
                     if ((data & (1 << (31 - j))) != 0) {
                         int code = i + j + 1;
                         PID obj = PID.make(code);

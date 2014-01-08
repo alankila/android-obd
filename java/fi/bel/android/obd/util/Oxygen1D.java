@@ -14,7 +14,7 @@ public class Oxygen1D extends PID {
     }
 
     @Override
-    public String unit() {
+    public String unit(int idx) {
         return null;
     }
 
