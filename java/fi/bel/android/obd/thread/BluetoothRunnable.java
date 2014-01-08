@@ -10,12 +10,14 @@ import android.util.Log;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import fi.bel.android.obd.service.DataService;
+import fi.bel.android.obd.util.OxygenSensor;
+import fi.bel.android.obd.util.PID;
 
 /**
  * This class implements a simple command-response protocol over the bluetooth
@@ -72,7 +74,11 @@ public class BluetoothRunnable implements Runnable {
 
     private final BlockingQueue<Transaction> queue = new ArrayBlockingQueue<>(100);
 
-    private final Set<String> supportedPid = new TreeSet<>();
+    private final Set<PID> pid = new ConcurrentSkipListSet<>();
+
+    private boolean pid13Supported;
+
+    private boolean pid1dSupported;
 
     protected Phase phase = null;
 
@@ -96,7 +102,10 @@ public class BluetoothRunnable implements Runnable {
             queue.add(new Transaction(command));
         }
 
-        supportedPid.add("00"); /* 00 is our entry point, this PID must always exist. */
+        pid.clear();
+        pid13Supported = false;
+        pid1dSupported = false;
+
         checkPid(0);
 
         connectAndRun();
@@ -195,8 +204,8 @@ public class BluetoothRunnable implements Runnable {
      *
      * @return true if supported
      */
-    public Set<String> pid() {
-        return supportedPid;
+    public Set<PID> pid() {
+        return pid;
     }
 
     /**
@@ -205,19 +214,27 @@ public class BluetoothRunnable implements Runnable {
      * @param i pid to scan onwards from
      */
     private void checkPid(final int i) {
-        queue.add(new Transaction(String.format("%02x%02x %d", 1, i, 1)) {
+        boolean add = queue.add(new Transaction(String.format("%02x%02x %d", 1, i, 1)) {
             @Override
             protected void success(String response) {
                 int data = (int) Long.parseLong(response.substring(4, 12), 16);
-                for (int j = 0; j < 32; j ++) {
+                for (int j = 0; j < 32; j++) {
                     if ((data & (1 << (31 - j))) != 0) {
-                        int pid = i + j + 1;
-                        String s = String.format("%02x", pid);
-                        supportedPid.add(s);
+                        int code = i + j + 1;
+                        PID obj = PID.make(code);
+                        if (obj != null) {
+                            pid.add(obj);
+                        }
+                        if (code == 0x13) {
+                            pid13Supported = true;
+                        }
+                        if (code == 0x1d) {
+                            pid1dSupported = true;
+                        }
                     }
                 }
 
-                if (i != 0xe0 && supportedPid.contains(String.format("%02x", i + 32))) {
+                if (i != 0xe0 && (data & 1) != 0) {
                     checkPid(i + 32);
                 } else {
                     checkPid13();
@@ -231,7 +248,7 @@ public class BluetoothRunnable implements Runnable {
      * We will then try 1d afterwards.
      */
     private void checkPid13() {
-        if (! supportedPid.contains("13")) {
+        if (! pid13Supported) {
             checkPid1d();
             return;
         }
@@ -241,8 +258,7 @@ public class BluetoothRunnable implements Runnable {
                 int data = Integer.parseInt(response.substring(4, 6), 16);
                 for (int i = 0; i < 8; i += 1) {
                     if ((data & (1 << i)) != 0) {
-                        String s = String.format("%02x", 0x14 + i);
-                        supportedPid.add(s);
+                        pid.add(new OxygenSensor(0x14 + i, i >> 2, i & 3));
                     }
                 }
 
@@ -254,10 +270,10 @@ public class BluetoothRunnable implements Runnable {
     /**
      * Check pid 1d. This also reports support for 14-1b, but the meanings are
      * different (2 sensors, 4 banks). We currently have no way to encode this
-     * information in supportedPid. We might be best off ignoring 1d altogether. :-/
+     * information in pid. We might be best off ignoring 1d altogether. :-/
      */
     private void checkPid1d() {
-        if (! supportedPid.contains("1d")) {
+        if (! pid1dSupported) {
             setPhase(Phase.READY);
             return;
         }
@@ -267,8 +283,7 @@ public class BluetoothRunnable implements Runnable {
                 int data = Integer.parseInt(response.substring(4, 6), 16);
                 for (int i = 0; i < 8; i += 1) {
                     if ((data & (1 << i)) != 0) {
-                        String s = String.format("%02x", 0x14 + i);
-                        supportedPid.add(s);
+                        pid.add(new OxygenSensor(0x14 + i, i >> 1, i & 3));
                     }
                 }
 

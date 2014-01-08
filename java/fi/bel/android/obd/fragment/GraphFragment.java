@@ -22,6 +22,7 @@ import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
 import fi.bel.android.obd.service.DataService;
 import fi.bel.android.obd.util.OBD;
+import fi.bel.android.obd.util.PID;
 import fi.bel.android.obd.view.GraphView;
 
 public class GraphFragment extends Fragment {
@@ -29,7 +30,7 @@ public class GraphFragment extends Fragment {
 
     protected SQLiteDatabase db;
 
-    protected List<String> data = new ArrayList<>();
+    protected List<PID.Sensor> data = new ArrayList<>();
 
     protected ListView dataList;
 
@@ -38,17 +39,15 @@ public class GraphFragment extends Fragment {
     protected final BroadcastReceiver newData = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            long time = intent.getLongExtra("time", 0);
-            String code = intent.getStringExtra("code");
-            float value = intent.getFloatExtra("value", 0);
+            long timestamp = intent.getLongExtra("timestamp", 0);
+            int code = intent.getIntExtra("pid", 0);
+            String response = intent.getStringExtra("value");
 
-            if (! data.contains(code)) {
-                data.add(code);
-            }
             for (View view : dataList.getTouchables()) {
                 GraphView gv = (GraphView) view.findViewById(R.id.graph_item_graph);
-                if (code.equals(gv.getCode())) {
-                    gv.addPoint(time, value);
+                if (code == gv.getSensor().getPid().getCode()) {
+                    float value = gv.getSensor().getPid().floatValue(response)[gv.getSensor().getIndex()];
+                    gv.addPoint(timestamp, value);
                 }
             }
         }
@@ -57,25 +56,30 @@ public class GraphFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_graph, null);
-        dataListAdapter = new ArrayAdapter<String>(getActivity(), 0, 0, data) {
+        dataListAdapter = new ArrayAdapter<PID.Sensor>(getActivity(), 0, 0, data) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 if (convertView == null) {
                     convertView = getActivity().getLayoutInflater().inflate(R.layout.fragment_graph_item, null);
                 }
-                String code = data.get(position);
+                PID.Sensor sensor = data.get(position);
 
                 TextView title = (TextView) convertView.findViewById(R.id.graph_item_title);
-                String titleText = getResources().getString(getResources().getIdentifier("PID" + code, "string", getActivity().getPackageName()));
-                titleText += " / " + OBD.unit(code);
-                title.setText(titleText);
+                title.setText(sensor.getPid().key(getActivity())[sensor.getIndex()]);
 
                 GraphView graph = (GraphView) convertView.findViewById(R.id.graph_item_graph);
-                graph.setCode(code);
+                graph.setSensor(sensor);
                 graph.clearPoints();
-                Cursor cursor = db.rawQuery("SELECT timestamp, value FROM data WHERE code = ? ORDER BY rowid", new String[] { code });
-                while (cursor.moveToNext()) {
-                    graph.addPoint(cursor.getLong(0), cursor.getFloat(1));
+                try (Cursor cursor = db.rawQuery(
+                        "SELECT timestamp, value FROM data WHERE pid = ? ORDER BY rowid",
+                        new String[] { String.valueOf(sensor.getPid().getCode()) }
+                )) {
+                    while (cursor.moveToNext()) {
+                        long timestamp = cursor.getLong(0);
+                        String response = cursor.getString(1);
+                        float value = sensor.getPid().floatValue(response)[sensor.getIndex()];
+                        graph.addPoint(timestamp, value);
+                    }
                 }
 
                 return convertView;

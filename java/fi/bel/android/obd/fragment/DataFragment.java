@@ -24,15 +24,16 @@ import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
 import fi.bel.android.obd.service.DataService;
 import fi.bel.android.obd.util.OBD;
+import fi.bel.android.obd.util.PID;
 
 public class DataFragment extends Fragment {
     protected static final String TAG = DataFragment.class.getSimpleName();
 
     protected SQLiteDatabase db;
 
-    protected List<String> data = new ArrayList<>();
+    protected List<PID.Sensor> data = new ArrayList<>();
 
-    protected Map<String, Float> dataMap = new HashMap<>();
+    protected Map<PID, String> dataMap = new HashMap<>();
 
     protected ListView dataList;
 
@@ -42,45 +43,42 @@ public class DataFragment extends Fragment {
         @Override
         public void onReceive(Context context, Intent intent) {
             data.clear();
-            for (String pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
-                for (String code : OBD.pidToCodeList(pid)) {
-                    if (OBD.unit(code) == null) {
-                       continue;
+            for (PID pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
+                try (Cursor cursor = db.rawQuery(
+                        "SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE code = ?)",
+                        new String[] { String.valueOf(pid.getCode()) }
+                )) {
+                    if (!cursor.moveToFirst()) {
+                        continue;
                     }
-                    handle(code);
-                }
+                    String dbValue = cursor.getString(0);
+                    dataMap.put(pid, dbValue);
+                    for (int i = 0; i < pid.values(); i += 1) {
+                        data.add(new PID.Sensor(pid, i));
+                    }
+                };
             }
             dataListAdapter.notifyDataSetChanged();
-        }
-
-        private void handle(String code) {
-            Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE code = ?)", new String[] { code });
-            if (cursor.moveToFirst()) {
-                float dbValue = cursor.getFloat(0);
-                data.add(code);
-                dataMap.put(code, dbValue);
-            }
-            cursor.close();
         }
     };
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_data, null);
-        dataListAdapter = new ArrayAdapter<String>(getActivity(), 0, 0, data) {
+        dataListAdapter = new ArrayAdapter<PID.Sensor>(getActivity(), 0, 0, data) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 if (convertView == null) {
                     convertView = getActivity().getLayoutInflater().inflate(R.layout.fragment_data_item, null);
                 }
-                String pid = data.get(position);
-                float pidValue = dataMap.get(pid);
+                PID.Sensor sensor = data.get(position);
+                String response = dataMap.get(sensor.getPid());
 
                 TextView key = (TextView) convertView.findViewById(R.id.data_item_key);
-                key.setText(getResources().getIdentifier("PID" + pid, "string", getActivity().getPackageName()));
+                key.setText(sensor.getPid().key(getActivity())[sensor.getIndex()]);
 
                 TextView value = (TextView) convertView.findViewById(R.id.data_item_value);
-                value.setText(String.format("%.2f %s", pidValue, OBD.unit(pid)));
+                value.setText(sensor.getPid().stringValue(getActivity(), response)[sensor.getIndex()]);
 
                 return convertView;
             }

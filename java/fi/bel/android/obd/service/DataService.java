@@ -17,6 +17,7 @@ import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
 import fi.bel.android.obd.thread.BluetoothRunnable;
 import fi.bel.android.obd.util.OBD;
+import fi.bel.android.obd.util.PID;
 
 /**
  * Background service that collects data when connection to BT device has been established.
@@ -31,8 +32,8 @@ public class DataService extends Service {
     public static SQLiteDatabase openDatabase(Context context) {
         context.getDatabasePath(".").getParentFile().mkdirs();
         SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("data2"), null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS data (timestamp long, code varchar(6), value float)");
-        db.execSQL("CREATE INDEX IF NOT EXISTS i_data_pid ON data (code)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS data (timestamp long, pid int, value varchar(8))");
+        db.execSQL("CREATE INDEX IF NOT EXISTS i_data_pid ON data (pid)");
         return db;
     }
 
@@ -101,41 +102,34 @@ public class DataService extends Service {
     }
 
     protected void collect() {
-        for (final String pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
-            if (OBD.unit(pid) == null) {
-                continue;
-            }
-            String cmd = String.format("%02x%s %d", 1, pid, 1);
+        for (final PID pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
+            String cmd = String.format("%02x%s %d", 1, pid.getCode(), 1);
             ContainerActivity.BLUETOOTH_RUNNABLE.addTransaction(new BluetoothRunnable.Transaction(cmd) {
                 @Override
                 protected void success(String response) {
-                    for (String code : OBD.pidToCodeList(pid)) {
-                        handle(code, response);
-                    }
-                }
+                    long time = System.currentTimeMillis();
+                    int code = pid.getCode();
+                    response = response.substring(4);
 
-                private void handle(String code, String response) {
-                    float newValue = OBD.convert(code, response);
-
-                    Cursor cursor = db.rawQuery("SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE code = ?)", new String[] { code });
+                    Cursor cursor = db.rawQuery(
+                            "SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)",
+                            new String[] { String.valueOf(code) }
+                    );
                     if (cursor.moveToFirst()) {
-                        float dbValue = cursor.getFloat(0);
-                        if (dbValue == newValue) {
-                            return;
+                        String dbValue = cursor.getString(0);
+                        if (! response.equals(dbValue)) {
+                            insertStatement.bindLong(1, time);
+                            insertStatement.bindLong(2, pid.getCode());
+                            insertStatement.bindString(3, response);
+                            insertStatement.executeInsert();
                         }
                     }
                     cursor.close();
 
-                    long time = System.currentTimeMillis();
-                    insertStatement.bindLong(1, time);
-                    insertStatement.bindString(2, code);
-                    insertStatement.bindDouble(3, newValue);
-                    insertStatement.executeInsert();
-
                     Intent newData = new Intent(NEW_DATA);
-                    newData.putExtra("time", time);
-                    newData.putExtra("code", code);
-                    newData.putExtra("value", newValue);
+                    newData.putExtra("timestamp", time);
+                    newData.putExtra("pid", code);
+                    newData.putExtra("value", response);
                     sendBroadcast(newData);
                 }
             });

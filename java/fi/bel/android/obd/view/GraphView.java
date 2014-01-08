@@ -9,6 +9,8 @@ import android.view.SurfaceView;
 import java.util.Map;
 import java.util.TreeMap;
 
+import fi.bel.android.obd.util.PID;
+
 public class GraphView extends SurfaceView {
     protected static final String TAG = GraphView.class.getSimpleName();
     protected static final String[] UNIT = new String[] { "", "k", "M", "G" };
@@ -29,7 +31,7 @@ public class GraphView extends SurfaceView {
         PEN.setAntiAlias(true);
     }
 
-    protected String pid;
+    protected PID.Sensor sensor;
 
     protected Map<Long, Float> series;
 
@@ -125,12 +127,12 @@ public class GraphView extends SurfaceView {
         return String.format("%.1f %s", value / Math.pow(1000, scale), UNIT[scale]);
     }
 
-    public String getCode() {
-        return pid;
+    public PID.Sensor getSensor() {
+        return sensor;
     }
 
-    public void setCode(String code) {
-        this.pid = code;
+    public void setSensor(PID.Sensor sensor) {
+        this.sensor = sensor;
     }
 
     /**
