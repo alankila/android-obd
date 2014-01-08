@@ -39,86 +39,95 @@ public class PID {
         return 1;
     }
 
-    public String[] key(Context context) {
+    public String key(Context context, int idx) {
         String pid = String.format("PID%02x", code);
         int id = context.getResources().getIdentifier(pid, "string", context.getPackageName());
-        return new String[] { context.getString(id) };
+        if (id != 0) {
+            return context.getString(id);
+        } else {
+            return String.format("0x%02x", code);
+        }
     }
 
-    public String[] unit() {
+    public String unit(int idx) {
         switch (code) {
             case 0x04:
             case 0x11:
-                return new String[] { "%" };
+                return "%";
             case 0x05:
             case 0x0f:
-                return new String[] { "C" };
+                return "C";
             case 0x06:
             case 0x07:
             case 0x08:
             case 0x09:
-                return new String[] { "%" };
+                return "%";
             case 0x0a:
             case 0x0b:
-                return new String[] { "kPa" };
+                return "kPa";
             case 0x0c:
-                return new String[] { "rpm" };
+                return "rpm";
             case 0x0d:
-                return new String[] { "km/h" };
+                return "km/h";
             case 0x0e:
-                return new String[] { "deg" };
+                return "deg";
             case 0x10:
-                return new String[] { "g/s" };
+                return "g/s";
             case 0x1f:
-                return new String[] { "s" };
+                return "s";
             case 0x21:
-                return new String[] { "km" };
+                return "km";
             default:
                 return null;
         }
     }
 
-    public String[] stringValue(Context context, String response) {
-        return new String[] { String.format("%.2f %s", floatValue(response)[0], unit()[0]) };
+    public String stringValue(Context context, String response, int idx) {
+        return String.format("%.2f %s", floatValue(response, idx), unit(idx));
     }
 
-    public float[] floatValue(String response) {
+    public float floatValue(String response, int idx) {
         switch (code) {
             case 0x04:
             case 0x11:
-                return new float[] { Integer.parseInt(response.substring(0, 2), 16) * 100 / 255.0f };
+                return Integer.parseInt(response.substring(0, 2), 16) * 100 / 255.0f;
             case 0x05:
             case 0x0f:
-                return new float[] { Integer.parseInt(response.substring(0, 2), 16) - 40 };
+                return Integer.parseInt(response.substring(0, 2), 16) - 40;
             case 0x06:
             case 0x07:
             case 0x08:
             case 0x09:
-                return new float[] { (Integer.parseInt(response.substring(0, 2), 16) - 128) * 100 / 128.0f };
+                return (Integer.parseInt(response.substring(0, 2), 16) - 128) * 100 / 128.0f;
             case 0x0a:
-                return new float[] { Integer.parseInt(response.substring(0, 2), 16) * 3.0f };
+                return Integer.parseInt(response.substring(0, 2), 16) * 3.0f;
             case 0x0b:
             case 0x0d:
             case 0x1f:
-                return new float[] { Integer.parseInt(response.substring(0, 2), 16) };
+                return Integer.parseInt(response.substring(0, 2), 16);
             case 0x0c:
-                return new float[] { Integer.parseInt(response.substring(0, 4), 16) / 4.0f };
+                return Integer.parseInt(response.substring(0, 4), 16) / 4.0f;
             case 0x0e:
-                return new float[] { (Integer.parseInt(response.substring(0, 2), 16) - 128) / 2.0f };
+                return (Integer.parseInt(response.substring(0, 2), 16) - 128) / 2.0f;
             case 0x10:
-                return new float[] { Integer.parseInt(response.substring(0, 4), 16) / 100.0f };
+                return Integer.parseInt(response.substring(0, 4), 16) / 100.0f;
             case 0x21:
-                return new float[] { Integer.parseInt(response.substring(0, 4), 16) };
+                return Integer.parseInt(response.substring(0, 4), 16);
 
             default:
-                return null;
+                return Float.NaN;
         }
     }
 
     public static PID make(int code) {
         switch (code) {
             case 0x03:
-                return new FuelSystem(code);
+            case 0x12:
+            case 0x1c:
+                return new StatusValue(code);
+
+            /* These values are oxygen sensors. We can't visualize them here,
+             * they are generated from state of PIDs 13 and 1d in BluetoothRunnable. */
             case 0x14:
             case 0x15:
             case 0x16:
@@ -128,10 +137,10 @@ public class PID {
             case 0x1a:
             case 0x1b:
                 return null;
+
             case 0x13:
                 return new Oxygen13(code);
-            case 0x1c:
-                return new Standard(code);
+
             case 0x1d:
                 return new Oxygen1D(code);
 

@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import fi.bel.android.obd.R;
-import fi.bel.android.obd.util.OBD;
+import fi.bel.android.obd.util.DTC;
 
 public class DTCSearchFragment extends Fragment {
     protected SearchView search;
@@ -84,8 +84,8 @@ public class DTCSearchFragment extends Fragment {
 
     private void refresh() {
         String keywords = search.getQuery().toString().toLowerCase();
-        Map<String, List<String>> faultHeaderMap = OBD.getFaultHeaderMap(getActivity());
-        Map<String, String> faultMap = OBD.getFaultMap(getActivity());
+        Map<String, List<String>> faultHeaderMap = DTC.getFaultHeaderMap(getActivity());
+        Map<String, String> faultMap = DTC.getFaultMap(getActivity());
 
         fault.clear();
         for (String header : faultHeaderMap.keySet()) {

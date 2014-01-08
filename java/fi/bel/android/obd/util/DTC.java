@@ -14,7 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class OBD {
+public class DTC {
     protected static final Charset UTF8 = Charset.forName("UTF_8");
 
     protected static Map<String, List<String>> faultHeaderMap;

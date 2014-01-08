@@ -14,12 +14,12 @@ public class Oxygen13 extends PID {
     }
 
     @Override
-    public String[] unit() {
-        return new String[] { null };
+    public String unit(int idx) {
+        return null;
     }
 
     @Override
-    public String[] stringValue(Context context, String response) {
+    public String stringValue(Context context, String response, int idx) {
         int present = Integer.parseInt(response.substring(0, 2), 16);
 
         String result = "";
@@ -28,11 +28,11 @@ public class Oxygen13 extends PID {
                 result += String.format("B%dS%d ", (i >> 2) + 1, (i & 3) + 1);
             }
         }
-        return new String[] { result };
+        return result;
     }
 
     @Override
-    public float[] floatValue(String response) {
-        return new float[] { Float.NaN };
+    public float floatValue(String response, int idx) {
+        return Float.NaN;
     }
 }

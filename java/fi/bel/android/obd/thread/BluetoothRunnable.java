@@ -14,6 +14,8 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 import fi.bel.android.obd.service.DataService;
 import fi.bel.android.obd.util.OxygenSensor;
@@ -24,8 +26,12 @@ import fi.bel.android.obd.util.PID;
  * serial link.
  */
 public class BluetoothRunnable implements Runnable {
+    protected static final String TAG = BluetoothRunnable.class.getSimpleName();
+
+    protected static final Charset ISO88591 = Charset.forName("ISO8859-1");
+
     /**
-     * Perform an OBD/ELM transaction, if connection exists.
+     * Perform an DTC/ELM transaction, if connection exists.
      * <p>
      * Terminates in either success() or failed() call.
      */
@@ -49,31 +55,34 @@ public class BluetoothRunnable implements Runnable {
         }
     }
 
+    /** Current phase/state of the BT connection. */
     public enum Phase {
         DISCONNECTED, CONNECTING, INITIALIZING, READY
     }
 
+    /** Intent used to notify listeners about phase change */
     public static final String ACTION_PHASE = "fi.bel.android.obd.PHASE";
 
+    /** Extra that holds the serialized Phase. */
     public static final String EXTRA_PHASE = "fi.bel.android.obd.PHASE";
-
-    protected static final String TAG = BluetoothRunnable.class.getSimpleName();
-
-    protected static final Charset ISO88591 = Charset.forName("ISO8859-1");
 
     /** Well-known serial SPP */
     protected static final UUID SPP = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
-    private BluetoothDevice device;
+    /** Current BT device */
+    private final AtomicReference<BluetoothDevice> device = new AtomicReference<>();
 
-    private BluetoothSocket socket;
+    /** Last used socket. */
+    private final AtomicReference<BluetoothSocket> socket = new AtomicReference<>();
+
+    /** Operations queue */
+    private final BlockingQueue<Transaction> queue = new LinkedBlockingQueue<>();
 
     private final Handler handler;
 
     private final Context context;
 
-    private final BlockingQueue<Transaction> queue = new ArrayBlockingQueue<>(100);
-
+    /* These are accessed only from the main thread. */
     private final Set<PID> pid = new ConcurrentSkipListSet<>();
 
     private boolean pid13Supported;
@@ -93,7 +102,10 @@ public class BluetoothRunnable implements Runnable {
         handler.post(new Runnable() {
             @Override
             public void run() {
-               setPhase(Phase.CONNECTING);
+                setPhase(Phase.CONNECTING);
+                pid.clear();
+                pid13Supported = false;
+                pid1dSupported = false;
             }
         });
 
@@ -101,10 +113,6 @@ public class BluetoothRunnable implements Runnable {
         for (String command : new String[] { "ATSP0", "ATZ", "ATE0" }) {
             queue.add(new Transaction(command));
         }
-
-        pid.clear();
-        pid13Supported = false;
-        pid1dSupported = false;
 
         checkPid(0);
 
@@ -123,14 +131,14 @@ public class BluetoothRunnable implements Runnable {
 
     private void connectAndRun() {
         try {
-            socket = device.createRfcommSocketToServiceRecord(SPP);
-            socket.connect();
+            socket.set(device.get().createRfcommSocketToServiceRecord(SPP));
+            socket.get().connect();
         }
         catch (IOException ioe) {
             return;
         }
 
-        if (! socket.isConnected()) {
+        if (! socket.get().isConnected()) {
             return;
         }
 
@@ -156,11 +164,11 @@ public class BluetoothRunnable implements Runnable {
                 String command = transaction.getCommand();
                 Log.i(TAG, "-> " + command);
                 byte[] cmd = (command + "\r\n").getBytes(ISO88591);
-                socket.getOutputStream().write(cmd);
+                socket.get().getOutputStream().write(cmd);
 
                 final StringBuilder response = new StringBuilder();
                 while (response.length() == 0 || response.charAt(response.length() - 1) != '>') {
-                    int length = socket.getInputStream().read(data);
+                    int length = socket.get().getInputStream().read(data);
                     String piece = new String(data, 0, length, ISO88591);
                     piece = piece.replaceAll("\\s", "");
                     response.append(piece);
@@ -210,11 +218,13 @@ public class BluetoothRunnable implements Runnable {
 
     /**
      * Discover all known PID values of the car.
+     * <p>
+     * Next in chain: checkPid13.
      *
      * @param i pid to scan onwards from
      */
     private void checkPid(final int i) {
-        boolean add = queue.add(new Transaction(String.format("%02x%02x %d", 1, i, 1)) {
+        queue.add(new Transaction(String.format("%02x%02x %d", 1, i, 1)) {
             @Override
             protected void success(String response) {
                 int data = (int) Long.parseLong(response.substring(4, 12), 16);
@@ -245,7 +255,8 @@ public class BluetoothRunnable implements Runnable {
 
     /**
      * Discover pid 14-1b support from pid 13. (4 sensors, 2 banks).
-     * We will then try 1d afterwards.
+     * <p>
+     * Next in chain: checkPid1d.
      */
     private void checkPid13() {
         if (! pid13Supported) {
@@ -269,8 +280,9 @@ public class BluetoothRunnable implements Runnable {
 
     /**
      * Check pid 1d. This also reports support for 14-1b, but the meanings are
-     * different (2 sensors, 4 banks). We currently have no way to encode this
-     * information in pid. We might be best off ignoring 1d altogether. :-/
+     * different (4 banks, 2 sensors).
+     * <p>
+     * This is the final check.
      */
     private void checkPid1d() {
         if (! pid1dSupported) {
@@ -298,7 +310,7 @@ public class BluetoothRunnable implements Runnable {
      * @return BT device
      */
     public BluetoothDevice getDevice() {
-        return device;
+        return device.get();
     }
 
     /**
@@ -308,7 +320,7 @@ public class BluetoothRunnable implements Runnable {
      * @param device BT device
      */
     public void setDevice(BluetoothDevice device) {
-        this.device = device;
+        this.device.set(device);
     }
 
     /**
@@ -325,10 +337,6 @@ public class BluetoothRunnable implements Runnable {
      * @param phase
      */
     protected void setPhase(BluetoothRunnable.Phase phase) {
-        if (Thread.currentThread() != handler.getLooper().getThread()) {
-            throw new RuntimeException("Invoked in wrong thread");
-        }
-
         /* Start/Stop dataservice depending on connection phase. */
         if (this.phase != BluetoothRunnable.Phase.READY && phase == BluetoothRunnable.Phase.READY) {
             context.startService(new Intent(context, DataService.class));
@@ -342,15 +350,15 @@ public class BluetoothRunnable implements Runnable {
 
     /**
      * Terminates any ongoing transaction by closing the handles.
-     *
+     * <p>
      * This method is synchronized because it may be called from UI thread or from this Runnable's
      * thread itself.
      */
     public synchronized void terminate() {
-        if (socket != null) {
+        if (socket.get() != null) {
             try {
-                socket.close();
-                socket = null;
+                socket.get().close();
+                socket.set(null);
             } catch (IOException e) {
             }
         }

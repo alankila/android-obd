@@ -16,7 +16,6 @@ import android.util.Log;
 import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
 import fi.bel.android.obd.thread.BluetoothRunnable;
-import fi.bel.android.obd.util.OBD;
 import fi.bel.android.obd.util.PID;
 
 /**
@@ -78,7 +77,7 @@ public class DataService extends Service {
         startForeground(1, notification.build());
 
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        wakelock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "OBD Data Collection Over BT");
+        wakelock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DTC Data Collection Over BT");
         wakelock.acquire();
 
         db = openDatabase(this);
@@ -103,7 +102,7 @@ public class DataService extends Service {
 
     protected void collect() {
         for (final PID pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
-            String cmd = String.format("%02x%s %d", 1, pid.getCode(), 1);
+            String cmd = String.format("%02x%02x %d", 1, pid.getCode(), 1);
             ContainerActivity.BLUETOOTH_RUNNABLE.addTransaction(new BluetoothRunnable.Transaction(cmd) {
                 @Override
                 protected void success(String response) {

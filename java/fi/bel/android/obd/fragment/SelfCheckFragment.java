@@ -17,7 +17,7 @@ import java.util.Map;
 import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
 import fi.bel.android.obd.thread.BluetoothRunnable;
-import fi.bel.android.obd.util.OBD;
+import fi.bel.android.obd.util.DTC;
 
 public class SelfCheckFragment extends Fragment {
     protected static final String TAG = SelfCheckFragment.class.getSimpleName();
@@ -179,7 +179,7 @@ public class SelfCheckFragment extends Fragment {
                 tv1.setText(faultCode);
 
                 TextView tv2 = (TextView) convertView.findViewById(android.R.id.text2);
-                Map<String, String> faultMap = OBD.getFaultMap(getContext());
+                Map<String, String> faultMap = DTC.getFaultMap(getContext());
                 tv2.setText(faultMap.get(faultCode));
 
                 return convertView;

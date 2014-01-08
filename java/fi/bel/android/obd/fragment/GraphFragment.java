@@ -11,17 +11,19 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import fi.bel.android.obd.ContainerActivity;
 import fi.bel.android.obd.R;
 import fi.bel.android.obd.service.DataService;
-import fi.bel.android.obd.util.OBD;
 import fi.bel.android.obd.util.PID;
 import fi.bel.android.obd.view.GraphView;
 
@@ -31,6 +33,10 @@ public class GraphFragment extends Fragment {
     protected SQLiteDatabase db;
 
     protected List<PID.Sensor> data = new ArrayList<>();
+
+    protected Set<Integer> codesAdded = new HashSet<>();
+
+    protected Set<GraphView> visibleViews = new HashSet<>();
 
     protected ListView dataList;
 
@@ -43,10 +49,21 @@ public class GraphFragment extends Fragment {
             int code = intent.getIntExtra("pid", 0);
             String response = intent.getStringExtra("value");
 
-            for (View view : dataList.getTouchables()) {
-                GraphView gv = (GraphView) view.findViewById(R.id.graph_item_graph);
+            /* We received data for this PID. Do we have a sensor in our list for it? */
+            if (! codesAdded.contains(code)) {
+                for (PID pid : ContainerActivity.BLUETOOTH_RUNNABLE.pid()) {
+                    if (pid.getCode() == code) {
+                        for (int i = 0; i < pid.values(); i += 1) {
+                            data.add(new PID.Sensor(pid, i));
+                        }
+                    }
+                }
+                codesAdded.add(code);
+            }
+
+            for (GraphView gv : visibleViews) {
                 if (code == gv.getSensor().getPid().getCode()) {
-                    float value = gv.getSensor().getPid().floatValue(response)[gv.getSensor().getIndex()];
+                    float value = gv.getSensor().getPid().floatValue(response, gv.getSensor().getIndex());
                     gv.addPoint(timestamp, value);
                 }
             }
@@ -65,7 +82,7 @@ public class GraphFragment extends Fragment {
                 PID.Sensor sensor = data.get(position);
 
                 TextView title = (TextView) convertView.findViewById(R.id.graph_item_title);
-                title.setText(sensor.getPid().key(getActivity())[sensor.getIndex()]);
+                title.setText(sensor.getPid().key(getActivity(), sensor.getIndex()));
 
                 GraphView graph = (GraphView) convertView.findViewById(R.id.graph_item_graph);
                 graph.setSensor(sensor);
@@ -77,7 +94,7 @@ public class GraphFragment extends Fragment {
                     while (cursor.moveToNext()) {
                         long timestamp = cursor.getLong(0);
                         String response = cursor.getString(1);
-                        float value = sensor.getPid().floatValue(response)[sensor.getIndex()];
+                        float value = sensor.getPid().floatValue(response, sensor.getIndex());
                         graph.addPoint(timestamp, value);
                     }
                 }
@@ -87,6 +104,13 @@ public class GraphFragment extends Fragment {
         };
         dataList = (ListView) view.findViewById(R.id.data);
         dataList.setAdapter(dataListAdapter);
+        dataList.setRecyclerListener(new AbsListView.RecyclerListener() {
+            @Override
+            public void onMovedToScrapHeap(View view) {
+                GraphView graph = (GraphView) view.findViewById(R.id.graph_item_graph);
+                visibleViews.remove(graph);
+            }
+        });
         return view;
     }
 
@@ -95,6 +119,8 @@ public class GraphFragment extends Fragment {
         super.onResume();
         db = DataService.openDatabase(getActivity());
         data.clear();
+        codesAdded.clear();
+        visibleViews.clear();
         getActivity().registerReceiver(newData, new IntentFilter(DataService.NEW_DATA));
     }
 

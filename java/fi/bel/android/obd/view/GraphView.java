@@ -31,7 +31,7 @@ public class GraphView extends SurfaceView {
         PEN.setAntiAlias(true);
     }
 
-    protected PID.Sensor sensor;
+    protected PID.Sensor code;
 
     protected Map<Long, Float> series;
 
@@ -128,11 +128,11 @@ public class GraphView extends SurfaceView {
     }
 
     public PID.Sensor getSensor() {
-        return sensor;
+        return code;
     }
 
     public void setSensor(PID.Sensor sensor) {
-        this.sensor = sensor;
+        this.code = sensor;
     }
 
     /**

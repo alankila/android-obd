@@ -2,6 +2,8 @@ package fi.bel.android.obd.util;
 
 import android.content.Context;
 
+import fi.bel.android.obd.R;
+
 /**
  * Created by alankila on 8.1.2014.
  */
@@ -22,36 +24,34 @@ public class OxygenSensor extends PID {
     }
 
     @Override
-    public String[] unit() {
-        return new String[] { getUnit1(), getUnit2() };
-    }
-
-    private String getUnit1() {
-        return "V";
-    }
-
-    private String getUnit2() {
-        return "%";
+    public String key(Context context, int idx) {
+        if (idx == 0) {
+            return String.format(context.getString(R.string.PID14_1), bank, sensor);
+        } else {
+            return String.format(context.getString(R.string.PID14_2), bank, sensor);
+        }
     }
 
     @Override
-    public String[] stringValue(Context context, String response) {
-        return new String[] {
-                String.format("%.2f %s", getValue1(response), getUnit1()),
-                String.format("%.2f %s", getValue2(response), getUnit2())
-        };
+    public String unit(int idx) {
+        if (idx == 0) {
+            return "V";
+        } else {
+            return "%";
+        }
     }
 
     @Override
-    public float[] floatValue(String response) {
-        return new float[] { getValue1(response), getValue2(response) };
+    public String stringValue(Context context, String response, int idx) {
+        return String.format("%.2f %s", floatValue(response, idx), unit(idx));
     }
 
-    private float getValue1(String response) {
-        return Integer.parseInt(response.substring(0, 2), 16) / 200.0f;
-    }
-
-    private float getValue2(String response) {
-        return (Integer.parseInt(response.substring(2, 4), 16) - 128) * 100 / 128.0f;
+    @Override
+    public float floatValue(String response, int idx) {
+        if (idx == 0) {
+            return Integer.parseInt(response.substring(0, 2), 16) / 200.0f;
+        } else {
+            return (Integer.parseInt(response.substring(2, 4), 16) - 128) * 100 / 128.0f;
+        }
     }
 }
