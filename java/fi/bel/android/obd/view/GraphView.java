@@ -5,24 +5,23 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.SurfaceView;
+import android.view.View;
 
 import java.util.Map;
 import java.util.TreeMap;
 
 import fi.bel.android.obd.util.PID;
 
-public class GraphView extends SurfaceView {
+public class GraphView extends View {
     protected static final String TAG = GraphView.class.getSimpleName();
     protected static final String[] UNIT = new String[] { "", "k", "M", "G" };
 
     public static final long WINDOW_MS = 1000 * 60 * 30;
 
-    protected static final Paint BG = new Paint();
     protected static final Paint BORDER = new Paint();
     protected static final Paint GRID = new Paint();
     protected static final Paint PEN = new Paint();
     static {
-        BG.setARGB(0xff, 0, 0, 0);
         BORDER.setARGB(0xff, 0xff, 0xff, 0xff);
         BORDER.setTextSize(8);
         GRID.setARGB(0x40, 0xff, 0xff, 0xff);
@@ -52,17 +51,16 @@ public class GraphView extends SurfaceView {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+
         float width = getWidth();
         float height = getHeight();
 
-        /* Blank */
-        canvas.drawRect(0, 0, width, height, BG);
-
         /* Draw frame */
-        canvas.drawLine(0, 0, width - 1, 0, BORDER);
-        canvas.drawLine(width - 1, 0, width - 1, height - 1, BORDER);
-        canvas.drawLine(width - 1, height - 1, 0, height - 1, BORDER);
-        canvas.drawLine(0, height-1, 0, 0, BORDER);
+        canvas.drawLine(0.5f, 0.5f, width - 0.5f, 0.5f, BORDER);
+        canvas.drawLine(width - 0.5f, 0.5f, width - 0.5f, height - 0.5f, BORDER);
+        canvas.drawLine(width - 0.5f, height - 0.5f, 0.5f, height - 0.5f, BORDER);
+        canvas.drawLine(0.5f, height - 0.5f, 0.5f, 0.5f, BORDER);
 
         /* Time grid */
         for (int i = -30; i <= 0; i += 5) {
