@@ -95,6 +95,7 @@ public class DataService extends Service {
         super.onDestroy();
         Log.i(TAG, "Stopping service");
 
+        stopForeground(true);
         handler.removeCallbacks(collect);
         db.close();
         wakelock.release();
