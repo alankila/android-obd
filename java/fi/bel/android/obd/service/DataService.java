@@ -111,18 +111,19 @@ public class DataService extends Service {
                     int code = pid.getCode();
                     response = response.substring(4);
 
-                    Cursor cursor = db.rawQuery(
+                    /*Cursor cursor = db.rawQuery(
                             "SELECT value FROM data WHERE rowid = (SELECT max(rowid) FROM data WHERE pid = ?)",
                             new String[] { String.valueOf(code) }
                     );
-
-                    if (!cursor.moveToFirst() || !response.equals(cursor.getString(0))) {
-                        insertStatement.bindLong(1, time);
-                        insertStatement.bindLong(2, pid.getCode());
-                        insertStatement.bindString(3, response);
-                        insertStatement.executeInsert();
+                    if (!cursor.moveToFirst() || !response.equals(cursor.getString(0))) {*/
+                    insertStatement.bindLong(1, time);
+                    insertStatement.bindLong(2, pid.getCode());
+                    insertStatement.bindString(3, response);
+                    insertStatement.executeInsert();
+                    /*
                     }
                     cursor.close();
+                    */
 
                     Intent newData = new Intent(NEW_DATA);
                     newData.putExtra("timestamp", time);

@@ -117,10 +117,6 @@ public class BluetoothRunnable implements Runnable {
         checkPid(0);
 
         connectAndRun();
-        if (phase == Phase.READY) {
-            context.stopService(new Intent(context, DataService.class));
-        }
-
         handler.post(new Runnable() {
             @Override
             public void run() {
