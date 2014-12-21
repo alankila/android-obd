@@ -142,7 +142,6 @@ public class PID implements Comparable<PID> {
                 return Integer.parseInt(response.substring(0, 2), 16) * 3.0f;
             case 0x0b:
             case 0x0d:
-            case 0x1f:
             case 0x30:
             case 0x33:
                 return Integer.parseInt(response.substring(0, 2), 16);
@@ -152,6 +151,7 @@ public class PID implements Comparable<PID> {
                 return (Integer.parseInt(response.substring(0, 2), 16) - 128) / 2.0f;
             case 0x10:
                 return Integer.parseInt(response.substring(0, 4), 16) / 100.0f;
+            case 0x1f:
             case 0x21:
             case 0x31:
             case 0x4d:
