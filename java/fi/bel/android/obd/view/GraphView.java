@@ -23,7 +23,6 @@ public class GraphView extends View {
     protected static final Paint PEN = new Paint();
     static {
         BORDER.setARGB(0xff, 0xff, 0xff, 0xff);
-        BORDER.setTextSize(8);
         GRID.setARGB(0x40, 0xff, 0xff, 0xff);
         PEN.setARGB(0xc0, 0, 0xff, 0);
         PEN.setStrokeWidth(2.0f);
@@ -47,6 +46,7 @@ public class GraphView extends View {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec);
         setMeasuredDimension(width, width / 2);
+        BORDER.setTextSize(width / 2 / 20);
     }
 
     @Override
