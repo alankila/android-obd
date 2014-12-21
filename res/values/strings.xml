@@ -107,4 +107,20 @@
     <string name="PID1f">Run time since engine start</string>
     <string name="PID20">PIDS supported [21 - 40]</string>
     <string name="PID21">Distance traveled with malfunction indicator lamp on</string>
+    <string name="PID2e">Commanded evaporative purge</string>
+    <string name="PID30">Number of warm-ups since codes cleared</string>
+    <string name="PID31">Distance traveled since codes cleared</string>
+    <string name="PID33">Barometric pressure</string>
+    <string name="PID3c">Catalyst temperature Bank 1, Sensor 1</string>
+    <string name="PID3e">Catalyst temperature Bank 1, Sensor 2</string>
+    <string name="PID42">Control module voltage</string>
+    <string name="PID43">Absolute load value</string>
+    <string name="PID44">Fuel/Air commanded equivalence ratio</string>
+    <string name="PID45">Relative throttle position</string>
+    <string name="PID47">Absolute throttle position B</string>
+    <string name="PID49">Absolute throttle position D</string>
+    <string name="PID4a">Accelerator pedal position E</string>
+    <string name="PID4c">Commanded throttle actuator</string>
+    <string name="PID4d">Time run with MIL on</string>
+    <string name="PID4e">Time since trouble codes cleared</string>
 </resources>

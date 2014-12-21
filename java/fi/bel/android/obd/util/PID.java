@@ -68,17 +68,28 @@ public class PID implements Comparable<PID> {
         switch (code) {
             case 0x04:
             case 0x11:
+            case 0x2e:
+            case 0x43:
                 return "%";
             case 0x05:
             case 0x0f:
+            case 0x3c:
+            case 0x3e:
                 return "C";
             case 0x06:
             case 0x07:
             case 0x08:
             case 0x09:
+            case 0x42:
+            case 0x45:
+            case 0x47:
+            case 0x49:
+            case 0x4a:
+            case 0x4c:
                 return "%";
             case 0x0a:
             case 0x0b:
+            case 0x33:
                 return "kPa";
             case 0x0c:
                 return "rpm";
@@ -91,7 +102,14 @@ public class PID implements Comparable<PID> {
             case 0x1f:
                 return "s";
             case 0x21:
+            case 0x31:
                 return "km";
+            case 0x30:
+            case 0x44:
+                return "";
+            case 0x4d:
+            case 0x4e:
+                return "min";
             default:
                 return null;
         }
@@ -105,6 +123,12 @@ public class PID implements Comparable<PID> {
         switch (code) {
             case 0x04:
             case 0x11:
+            case 0x2e:
+            case 0x45:
+            case 0x47:
+            case 0x49:
+            case 0x4a:
+            case 0x4c:
                 return Integer.parseInt(response.substring(0, 2), 16) * 100 / 255.0f;
             case 0x05:
             case 0x0f:
@@ -119,6 +143,8 @@ public class PID implements Comparable<PID> {
             case 0x0b:
             case 0x0d:
             case 0x1f:
+            case 0x30:
+            case 0x33:
                 return Integer.parseInt(response.substring(0, 2), 16);
             case 0x0c:
                 return Integer.parseInt(response.substring(0, 4), 16) / 4.0f;
@@ -127,7 +153,19 @@ public class PID implements Comparable<PID> {
             case 0x10:
                 return Integer.parseInt(response.substring(0, 4), 16) / 100.0f;
             case 0x21:
+            case 0x31:
+            case 0x4d:
+            case 0x4e:
                 return Integer.parseInt(response.substring(0, 4), 16);
+            case 0x3c:
+            case 0x3e:
+                return Integer.parseInt(response.substring(0, 4), 16) / 10 - 40;
+            case 0x42:
+                return Integer.parseInt(response.substring(0, 4), 16) / 1000f;
+            case 0x43:
+                return Integer.parseInt(response.substring(0, 4), 16) * 100 / 65535f;
+            case 0x44:
+                return Integer.parseInt(response.substring(0, 4), 16) / 32768f;
 
             default:
                 return Float.NaN;

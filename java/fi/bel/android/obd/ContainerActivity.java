@@ -46,7 +46,7 @@ public class ContainerActivity extends Activity implements ScreenListFragment.Ca
         if (BLUETOOTH_RUNNABLE == null) {
             BLUETOOTH_RUNNABLE = new BluetoothRunnable(new Handler(), getApplicationContext());
         }
-        
+
         getFragmentManager()
                 .beginTransaction()
                 .replace(R.id.screen_list, new ScreenListFragment())
