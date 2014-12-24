@@ -5,7 +5,7 @@ android {
     buildToolsVersion "21.1.2"
 
     defaultConfig {
-        applicationId "fi.bel.httpservicemonitor"
+        applicationId "fi.bel.android.obd"
         minSdkVersion 21
         targetSdkVersion 21
         versionCode 1
