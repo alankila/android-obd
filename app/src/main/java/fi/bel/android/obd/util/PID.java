@@ -163,7 +163,7 @@ public class PID implements Comparable<PID> {
             case 0x42:
                 return Integer.parseInt(response.substring(0, 4), 16) / 1000f;
             case 0x43:
-                return Integer.parseInt(response.substring(0, 4), 16) * 100 / 65535f;
+                return Integer.parseInt(response.substring(0, 4), 16) * 100 / 255f;
             case 0x44:
                 return Integer.parseInt(response.substring(0, 4), 16) / 32768f;
 
